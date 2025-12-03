@@ -14,7 +14,7 @@ A bridge to interact with LM Arena. This project provides an OpenAI compatible A
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/CloudWaddie/LMArenaBridge.git
+   git clone https://github.com/fengyegf/LMArenaBridge.git
    ```
 2. Navigate to the project directory:
    ```bash

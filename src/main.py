@@ -861,13 +861,13 @@ async def login_page(request: Request, error: Optional[str] = None):
     if await get_current_session(request):
         return RedirectResponse(url="/dashboard")
     
-    error_msg = '<div class="error-message">Invalid password. Please try again.</div>' if error else ''
+    error_msg = '<div class="error-message">密码错误，请重试。</div>' if error else ''
     
     return f"""
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Login - LMArena Bridge</title>
+            <title>登录 - LMArena Bridge</title>
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
                 * {{ margin: 0; padding: 0; box-sizing: border-box; }}
@@ -950,14 +950,14 @@ async def login_page(request: Request, error: Optional[str] = None):
         <body>
             <div class="login-container">
                 <h1>LMArena Bridge</h1>
-                <div class="subtitle">Sign in to access the dashboard</div>
+                <div class="subtitle">登录以访问仪表板</div>
                 {error_msg}
                 <form action="/login" method="post">
                     <div class="form-group">
-                        <label for="password">Password</label>
-                        <input type="password" id="password" name="password" placeholder="Enter your password" required autofocus>
+                        <label for="password">密码</label>
+                        <input type="password" id="password" name="password" placeholder="请输入您的密码" required autofocus>
                     </div>
-                    <button type="submit">Sign In</button>
+                    <button type="submit">登录</button>
                 </form>
             </div>
         </body>
@@ -997,9 +997,9 @@ async def dashboard(session: str = Depends(get_current_session)):
         # Return error page
         return HTMLResponse(f"""
             <html><body style="font-family: sans-serif; padding: 40px; text-align: center;">
-                <h1>⚠️ Dashboard Error</h1>
-                <p>Failed to load configuration: {str(e)}</p>
-                <p><a href="/logout">Logout</a> | <a href="/dashboard">Retry</a></p>
+                <h1>⚠️ 仪表板错误</h1>
+                <p>加载配置失败: {str(e)}</p>
+                <p><a href="/logout">退出登录</a> | <a href="/dashboard">重试</a></p>
             </body></html>
         """, status_code=500)
 
@@ -1014,9 +1014,9 @@ async def dashboard(session: str = Depends(get_current_session)):
                 <td><span class="badge">{key['rpm']} RPM</span></td>
                 <td><small>{created_date}</small></td>
                 <td>
-                    <form action='/delete-key' method='post' style='margin:0;' onsubmit='return confirm("Delete this API key?");'>
+                    <form action='/delete-key' method='post' style='margin:0;' onsubmit='return confirm("确定要删除此 API 密钥吗？");'>
                         <input type='hidden' name='key_id' value='{key['key']}'>
-                        <button type='submit' class='btn-delete'>Delete</button>
+                        <button type='submit' class='btn-delete'>删除</button>
                     </form>
                 </td>
             </tr>
@@ -1027,19 +1027,19 @@ async def dashboard(session: str = Depends(get_current_session)):
     models_html = ""
     for i, model in enumerate(text_models[:20]):
         rank = model.get('rank', '?')
-        org = model.get('organization', 'Unknown')
+        org = model.get('organization', '未知')
         models_html += f"""
             <div class="model-card">
                 <div class="model-header">
-                    <span class="model-name">{model.get('publicName', 'Unnamed')}</span>
-                    <span class="model-rank">Rank {rank}</span>
+                    <span class="model-name">{model.get('publicName', '未命名')}</span>
+                    <span class="model-rank">排名 {rank}</span>
                 </div>
                 <div class="model-org">{org}</div>
             </div>
         """
     
     if not models_html:
-        models_html = '<div class="no-data">No models found. Token may be invalid or expired.</div>'
+        models_html = '<div class="no-data">未找到模型。令牌可能无效或已过期。</div>'
 
     # Render Stats
     stats_html = ""
@@ -1047,13 +1047,13 @@ async def dashboard(session: str = Depends(get_current_session)):
         for model, count in sorted(model_usage_stats.items(), key=lambda x: x[1], reverse=True)[:10]:
             stats_html += f"<tr><td>{model}</td><td><strong>{count}</strong></td></tr>"
     else:
-        stats_html = "<tr><td colspan='2' class='no-data'>No usage data yet</td></tr>"
+        stats_html = "<tr><td colspan='2' class='no-data'>暂无使用数据</td></tr>"
 
     # Check token status
-    token_status = "✅ Configured" if config.get("auth_token") else "❌ Not Set"
+    token_status = "✅ 已配置" if config.get("auth_token") else "❌ 未设置"
     token_class = "status-good" if config.get("auth_token") else "status-bad"
     
-    cf_status = "✅ Configured" if config.get("cf_clearance") else "❌ Not Set"
+    cf_status = "✅ 已配置" if config.get("cf_clearance") else "❌ 未设置"
     cf_class = "status-good" if config.get("cf_clearance") else "status-bad"
     
     # Get recent activity count (last 24 hours)
@@ -1063,7 +1063,7 @@ async def dashboard(session: str = Depends(get_current_session)):
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Dashboard - LMArena Bridge</title>
+            <title>仪表板 - LMArena Bridge</title>
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
             <style>
@@ -1343,8 +1343,8 @@ async def dashboard(session: str = Depends(get_current_session)):
         <body>
             <div class="header">
                 <div class="header-content">
-                    <h1>🚀 LMArena Bridge Dashboard</h1>
-                    <a href="/logout" class="logout-btn">Logout</a>
+                    <h1>🚀 LMArena Bridge 仪表板</h1>
+                    <a href="/logout" class="logout-btn">退出登录</a>
                 </div>
             </div>
 
@@ -1353,47 +1353,47 @@ async def dashboard(session: str = Depends(get_current_session)):
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-value">{len(config['api_keys'])}</div>
-                        <div class="stat-label">API Keys</div>
+                        <div class="stat-label">API 密钥</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-value">{len(text_models)}</div>
-                        <div class="stat-label">Available Models</div>
+                        <div class="stat-label">可用模型</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-value">{sum(model_usage_stats.values())}</div>
-                        <div class="stat-label">Total Requests</div>
+                        <div class="stat-label">总请求数</div>
                     </div>
                 </div>
 
                 <!-- Arena Auth Token -->
                 <div class="section">
                     <div class="section-header">
-                        <h2>🔐 Arena Authentication Tokens</h2>
+                        <h2>🔐 Arena 认证令牌</h2>
                         <span class="status-badge {token_class}">{token_status}</span>
                     </div>
                     
-                    <h3 style="margin-bottom: 15px; font-size: 16px;">Multiple Auth Tokens (Round-Robin)</h3>
-                    <p style="color: #666; margin-bottom: 15px;">Add multiple tokens for automatic cycling. Each conversation will use a consistent token.</p>
+                    <h3 style="margin-bottom: 15px; font-size: 16px;">多个认证令牌（轮询）</h3>
+                    <p style="color: #666; margin-bottom: 15px;">添加多个令牌以进行自动循环。每个对话将使用一致的令牌。</p>
                     
                     {''.join([f'''
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 6px;">
                         <code style="flex: 1; font-family: 'Courier New', monospace; font-size: 12px; word-break: break-all;">{token[:50]}...</code>
-                        <form action="/delete-auth-token" method="post" style="margin: 0;" onsubmit="return confirm('Delete this token?');">
+                        <form action="/delete-auth-token" method="post" style="margin: 0;" onsubmit="return confirm('确定要删除此令牌吗？');">
                             <input type="hidden" name="token_index" value="{i}">
-                            <button type="submit" class="btn-delete">Delete</button>
+                            <button type="submit" class="btn-delete">删除</button>
                         </form>
                     </div>
                     ''' for i, token in enumerate(config.get("auth_tokens", []))])}
                     
-                    {('<div class="no-data">No tokens configured. Add tokens below.</div>' if not config.get("auth_tokens") else '')}
+                    {('<div class="no-data">未配置令牌。请在下方添加令牌。</div>' if not config.get("auth_tokens") else '')}
                     
-                    <h3 style="margin-top: 25px; margin-bottom: 15px; font-size: 16px;">Add New Token</h3>
+                    <h3 style="margin-top: 25px; margin-bottom: 15px; font-size: 16px;">添加新令牌</h3>
                     <form action="/add-auth-token" method="post">
                         <div class="form-group">
-                            <label for="new_auth_token">New Arena Auth Token</label>
-                            <textarea id="new_auth_token" name="new_auth_token" placeholder="Paste a new arena-auth-prod-v1 token here" required></textarea>
+                            <label for="new_auth_token">新的 Arena 认证令牌</label>
+                            <textarea id="new_auth_token" name="new_auth_token" placeholder="在此粘贴新的 arena-auth-prod-v1 令牌" required></textarea>
                         </div>
-                        <button type="submit">Add Token</button>
+                        <button type="submit">添加令牌</button>
                     </form>
                 </div>
 
@@ -1403,50 +1403,50 @@ async def dashboard(session: str = Depends(get_current_session)):
                         <h2>☁️ Cloudflare Clearance</h2>
                         <span class="status-badge {cf_class}">{cf_status}</span>
                     </div>
-                    <p style="color: #666; margin-bottom: 15px;">This is automatically fetched on startup. If API requests fail with 404 errors, the token may have expired.</p>
+                    <p style="color: #666; margin-bottom: 15px;">这是在启动时自动获取的。如果 API 请求失败并出现 404 错误，则令牌可能已过期。</p>
                     <code style="background: #f8f9fa; padding: 10px; display: block; border-radius: 6px; word-break: break-all; margin-bottom: 15px;">
-                        {config.get("cf_clearance", "Not set")}
+                        {config.get("cf_clearance", "未设置")}
                     </code>
                     <form action="/refresh-tokens" method="post" style="margin-top: 15px;">
-                        <button type="submit" style="background: #28a745;">🔄 Refresh Tokens &amp; Models</button>
+                        <button type="submit" style="background: #28a745;">🔄 刷新令牌和模型</button>
                     </form>
-                    <p style="color: #999; font-size: 13px; margin-top: 10px;"><em>Note: This will fetch a fresh cf_clearance token and update the model list.</em></p>
+                    <p style="color: #999; font-size: 13px; margin-top: 10px;"><em>注意：这将获取新的 cf_clearance 令牌并更新模型列表。</em></p>
                 </div>
 
                 <!-- API Keys -->
                 <div class="section">
                     <div class="section-header">
-                        <h2>🔑 API Keys</h2>
+                        <h2>🔑 API 密钥</h2>
                     </div>
                     <table>
                         <thead>
                             <tr>
-                                <th>Name</th>
-                                <th>Key</th>
-                                <th>Rate Limit</th>
-                                <th>Created</th>
-                                <th>Action</th>
+                                <th>名称</th>
+                                <th>密钥</th>
+                                <th>速率限制</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {keys_html if keys_html else '<tr><td colspan="5" class="no-data">No API keys configured</td></tr>'}
+                            {keys_html if keys_html else '<tr><td colspan="5" class="no-data">未配置 API 密钥</td></tr>'}
                         </tbody>
                     </table>
                     
-                    <h3 style="margin-top: 30px; margin-bottom: 15px; font-size: 18px;">Create New API Key</h3>
+                    <h3 style="margin-top: 30px; margin-bottom: 15px; font-size: 18px;">创建新 API 密钥</h3>
                     <form action="/create-key" method="post">
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="name">Key Name</label>
-                                <input type="text" id="name" name="name" placeholder="e.g., Production Key" required>
+                                <label for="name">密钥名称</label>
+                                <input type="text" id="name" name="name" placeholder="例如：生产密钥" required>
                             </div>
                             <div class="form-group">
-                                <label for="rpm">Rate Limit (RPM)</label>
+                                <label for="rpm">速率限制 (RPM)</label>
                                 <input type="number" id="rpm" name="rpm" value="60" min="1" max="1000" required>
                             </div>
                             <div class="form-group">
                                 <label>&nbsp;</label>
-                                <button type="submit">Create Key</button>
+                                <button type="submit">创建密钥</button>
                             </div>
                         </div>
                     </form>
@@ -1455,23 +1455,23 @@ async def dashboard(session: str = Depends(get_current_session)):
                 <!-- Usage Statistics -->
                 <div class="section">
                     <div class="section-header">
-                        <h2>📊 Usage Statistics</h2>
+                        <h2>📊 使用统计</h2>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
                         <div>
-                            <h3 style="text-align: center; margin-bottom: 15px; font-size: 16px; color: #666;">Model Usage Distribution</h3>
+                            <h3 style="text-align: center; margin-bottom: 15px; font-size: 16px; color: #666;">模型使用分布</h3>
                             <canvas id="modelPieChart" style="max-height: 300px;"></canvas>
                         </div>
                         <div>
-                            <h3 style="text-align: center; margin-bottom: 15px; font-size: 16px; color: #666;">Request Count by Model</h3>
+                            <h3 style="text-align: center; margin-bottom: 15px; font-size: 16px; color: #666;">各模型请求数</h3>
                             <canvas id="modelBarChart" style="max-height: 300px;"></canvas>
                         </div>
                     </div>
                     <table>
                         <thead>
                             <tr>
-                                <th>Model</th>
-                                <th>Requests</th>
+                                <th>模型</th>
+                                <th>请求数</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1483,9 +1483,9 @@ async def dashboard(session: str = Depends(get_current_session)):
                 <!-- Available Models -->
                 <div class="section">
                     <div class="section-header">
-                        <h2>🤖 Available Models</h2>
+                        <h2>🤖 可用模型</h2>
                     </div>
-                    <p style="color: #666; margin-bottom: 15px;">Showing top 20 text-based models (Rank 1 = Best)</p>
+                    <p style="color: #666; margin-bottom: 15px;">显示前 20 个基于文本的模型（排名 1 = 最佳）</p>
                     <div class="model-grid">
                         {models_html}
                     </div>
@@ -1554,7 +1554,7 @@ async def dashboard(session: str = Depends(get_current_session)):
                         data: {{
                             labels: modelNames,
                             datasets: [{{
-                                label: 'Requests',
+                                label: '请求数',
                                 data: modelCounts,
                                 backgroundColor: colors[0],
                                 borderColor: colors[1],
@@ -1571,7 +1571,7 @@ async def dashboard(session: str = Depends(get_current_session)):
                                 tooltip: {{
                                     callbacks: {{
                                         label: function(context) {{
-                                            return 'Requests: ' + context.parsed.y;
+                                            return '请求数: ' + context.parsed.y;
                                         }}
                                     }}
                                 }}
@@ -1597,8 +1597,8 @@ async def dashboard(session: str = Depends(get_current_session)):
                     }});
                 }} else {{
                     // Show "no data" message
-                    document.getElementById('modelPieChart').parentElement.innerHTML = '<p style="text-align: center; color: #999; padding: 50px;">No usage data yet</p>';
-                    document.getElementById('modelBarChart').parentElement.innerHTML = '<p style="text-align: center; color: #999; padding: 50px;">No usage data yet</p>';
+                    document.getElementById('modelPieChart').parentElement.innerHTML = '<p style="text-align: center; color: #999; padding: 50px;">暂无使用数据</p>';
+                    document.getElementById('modelBarChart').parentElement.innerHTML = '<p style="text-align: center; color: #999; padding: 50px;">暂无使用数据</p>';
                 }}
             </script>
         </body>
