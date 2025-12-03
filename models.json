@@ -1716,23 +1716,6 @@
     }
   },
   {
-    "id": "019adb32-b716-7591-9a2f-c6882973e340",
-    "organization": "deepseek",
-    "provider": "deepseek",
-    "publicName": "deepseek-v3.2",
-    "capabilities": {
-      "inputCapabilities": {
-        "text": true
-      },
-      "outputCapabilities": {
-        "text": true
-      }
-    },
-    "rankByModality": {
-      "chat": 9007199254740991
-    }
-  },
-  {
     "id": "019ab82f-1034-7656-b59b-85642c6973b6",
     "publicName": "raptor-llm-1125",
     "capabilities": {
@@ -1985,6 +1968,23 @@
     }
   },
   {
+    "id": "019ae300-83b7-7717-a1e0-31accd1ff6fa",
+    "organization": "amazon",
+    "provider": "amazonBedrock",
+    "publicName": "nova-2-lite",
+    "capabilities": {
+      "inputCapabilities": {
+        "text": true
+      },
+      "outputCapabilities": {
+        "text": true
+      }
+    },
+    "rankByModality": {
+      "chat": 9007199254740991
+    }
+  },
+  {
     "id": "b4a681ed-df4e-476f-89c6-a992a5783e60",
     "publicName": "EB45-turbo-vl-0906",
     "capabilities": {
@@ -2217,6 +2217,23 @@
   {
     "id": "019acca2-fc2c-7797-a7b1-67955780a0dc",
     "publicName": "phantom-1125-1",
+    "capabilities": {
+      "inputCapabilities": {
+        "text": true
+      },
+      "outputCapabilities": {
+        "text": true
+      }
+    },
+    "rankByModality": {
+      "chat": 9007199254740991
+    }
+  },
+  {
+    "id": "019adb32-b716-7591-9a2f-c6882973e340",
+    "organization": "deepseek",
+    "provider": "deepseek",
+    "publicName": "deepseek-v3.2",
     "capabilities": {
       "inputCapabilities": {
         "text": true
@@ -5267,6 +5284,23 @@
     "rank": 10,
     "rankByModality": {
       "search": 10
+    }
+  },
+  {
+    "id": "019ae2e2-2c80-7708-bdca-0e93c929e353",
+    "organization": "xai",
+    "provider": "xaiSearch",
+    "publicName": "grok-4-1-fast-search",
+    "capabilities": {
+      "inputCapabilities": {
+        "text": true
+      },
+      "outputCapabilities": {
+        "search": true
+      }
+    },
+    "rankByModality": {
+      "search": 9007199254740991
     }
   },
   {

@@ -19,186 +19,25 @@ from fastapi.security import APIKeyHeader
 import httpx
 
 # ============================================================
-# CONFIGURATION
+# 配置
 # ============================================================
-# Set to True for detailed logging, False for minimal logging
-DEBUG = True
+# 设置为 True 以进行详细日志记录，设置为 False 以进行最少日志记录
+DEBUG = False
 
-# Port to run the server on
+# 运行服务器的端口
 PORT = 8000
-
-# HTTP Status Codes
-class HTTPStatus:
-    # 1xx Informational
-    CONTINUE = 100
-    SWITCHING_PROTOCOLS = 101
-    PROCESSING = 102
-    EARLY_HINTS = 103
-    
-    # 2xx Success
-    OK = 200
-    CREATED = 201
-    ACCEPTED = 202
-    NON_AUTHORITATIVE_INFORMATION = 203
-    NO_CONTENT = 204
-    RESET_CONTENT = 205
-    PARTIAL_CONTENT = 206
-    MULTI_STATUS = 207
-    
-    # 3xx Redirection
-    MULTIPLE_CHOICES = 300
-    MOVED_PERMANENTLY = 301
-    MOVED_TEMPORARILY = 302
-    SEE_OTHER = 303
-    NOT_MODIFIED = 304
-    USE_PROXY = 305
-    TEMPORARY_REDIRECT = 307
-    PERMANENT_REDIRECT = 308
-    
-    # 4xx Client Errors
-    BAD_REQUEST = 400
-    UNAUTHORIZED = 401
-    PAYMENT_REQUIRED = 402
-    FORBIDDEN = 403
-    NOT_FOUND = 404
-    METHOD_NOT_ALLOWED = 405
-    NOT_ACCEPTABLE = 406
-    PROXY_AUTHENTICATION_REQUIRED = 407
-    REQUEST_TIMEOUT = 408
-    CONFLICT = 409
-    GONE = 410
-    LENGTH_REQUIRED = 411
-    PRECONDITION_FAILED = 412
-    REQUEST_TOO_LONG = 413
-    REQUEST_URI_TOO_LONG = 414
-    UNSUPPORTED_MEDIA_TYPE = 415
-    REQUESTED_RANGE_NOT_SATISFIABLE = 416
-    EXPECTATION_FAILED = 417
-    IM_A_TEAPOT = 418
-    INSUFFICIENT_SPACE_ON_RESOURCE = 419
-    METHOD_FAILURE = 420
-    MISDIRECTED_REQUEST = 421
-    UNPROCESSABLE_ENTITY = 422
-    LOCKED = 423
-    FAILED_DEPENDENCY = 424
-    UPGRADE_REQUIRED = 426
-    PRECONDITION_REQUIRED = 428
-    TOO_MANY_REQUESTS = 429
-    REQUEST_HEADER_FIELDS_TOO_LARGE = 431
-    UNAVAILABLE_FOR_LEGAL_REASONS = 451
-    
-    # 5xx Server Errors
-    INTERNAL_SERVER_ERROR = 500
-    NOT_IMPLEMENTED = 501
-    BAD_GATEWAY = 502
-    SERVICE_UNAVAILABLE = 503
-    GATEWAY_TIMEOUT = 504
-    HTTP_VERSION_NOT_SUPPORTED = 505
-    INSUFFICIENT_STORAGE = 507
-    NETWORK_AUTHENTICATION_REQUIRED = 511
-
-# Status code descriptions for logging
-STATUS_MESSAGES = {
-    100: "Continue",
-    101: "Switching Protocols",
-    102: "Processing",
-    103: "Early Hints",
-    200: "OK - Success",
-    201: "Created",
-    202: "Accepted",
-    203: "Non-Authoritative Information",
-    204: "No Content",
-    205: "Reset Content",
-    206: "Partial Content",
-    207: "Multi-Status",
-    300: "Multiple Choices",
-    301: "Moved Permanently",
-    302: "Moved Temporarily",
-    303: "See Other",
-    304: "Not Modified",
-    305: "Use Proxy",
-    307: "Temporary Redirect",
-    308: "Permanent Redirect",
-    400: "Bad Request - Invalid request syntax",
-    401: "Unauthorized - Invalid or expired token",
-    402: "Payment Required",
-    403: "Forbidden - Access denied",
-    404: "Not Found - Resource doesn't exist",
-    405: "Method Not Allowed",
-    406: "Not Acceptable",
-    407: "Proxy Authentication Required",
-    408: "Request Timeout",
-    409: "Conflict",
-    410: "Gone - Resource permanently deleted",
-    411: "Length Required",
-    412: "Precondition Failed",
-    413: "Request Too Long - Payload too large",
-    414: "Request URI Too Long",
-    415: "Unsupported Media Type",
-    416: "Requested Range Not Satisfiable",
-    417: "Expectation Failed",
-    418: "I'm a Teapot",
-    419: "Insufficient Space on Resource",
-    420: "Method Failure",
-    421: "Misdirected Request",
-    422: "Unprocessable Entity",
-    423: "Locked",
-    424: "Failed Dependency",
-    426: "Upgrade Required",
-    428: "Precondition Required",
-    429: "Too Many Requests - Rate limit exceeded",
-    431: "Request Header Fields Too Large",
-    451: "Unavailable For Legal Reasons",
-    500: "Internal Server Error",
-    501: "Not Implemented",
-    502: "Bad Gateway",
-    503: "Service Unavailable",
-    504: "Gateway Timeout",
-    505: "HTTP Version Not Supported",
-    507: "Insufficient Storage",
-    511: "Network Authentication Required"
-}
-
-def get_status_emoji(status_code: int) -> str:
-    """Get emoji for status code"""
-    if 200 <= status_code < 300:
-        return "✅"
-    elif 300 <= status_code < 400:
-        return "↪️"
-    elif 400 <= status_code < 500:
-        if status_code == 401:
-            return "🔒"
-        elif status_code == 403:
-            return "🚫"
-        elif status_code == 404:
-            return "❓"
-        elif status_code == 429:
-            return "⏱️"
-        return "⚠️"
-    elif 500 <= status_code < 600:
-        return "❌"
-    return "ℹ️"
-
-def log_http_status(status_code: int, context: str = ""):
-    """Log HTTP status with readable message"""
-    emoji = get_status_emoji(status_code)
-    message = STATUS_MESSAGES.get(status_code, f"Unknown Status {status_code}")
-    if context:
-        debug_print(f"{emoji} HTTP {status_code}: {message} ({context})")
-    else:
-        debug_print(f"{emoji} HTTP {status_code}: {message}")
 # ============================================================
 
 def debug_print(*args, **kwargs):
-    """Print debug messages only if DEBUG is True"""
+    """仅在 DEBUG 为 True 时打印调试消息"""
     if DEBUG:
         print(*args, **kwargs)
 
-# Custom UUIDv7 implementation (using correct Unix epoch)
+# 自定义 UUIDv7 实现（使用正确的 Unix 纪元）
 def uuid7():
     """
-    Generate a UUIDv7 using Unix epoch (milliseconds since 1970-01-01)
-    matching the browser's implementation.
+    使用 Unix 纪元（自 1970-01-01 以来的毫秒数）生成 UUIDv7
+    与浏览器的实现相匹配。
     """
     timestamp_ms = int(time.time() * 1000)
     rand_a = secrets.randbits(12)
@@ -211,47 +50,38 @@ def uuid7():
     hex_str = f"{uuid_int:032x}"
     return f"{hex_str[0:8]}-{hex_str[8:12]}-{hex_str[12:16]}-{hex_str[16:20]}-{hex_str[20:32]}"
 
-# Image upload helper functions
+# 图片上传辅助函数
 async def upload_image_to_lmarena(image_data: bytes, mime_type: str, filename: str) -> Optional[tuple]:
     """
-    Upload an image to LMArena R2 storage and return the key and download URL.
+    上传图片到 LMArena R2 存储并返回密钥和下载 URL。
     
-    Args:
-        image_data: Binary image data
-        mime_type: MIME type of the image (e.g., 'image/png')
-        filename: Original filename for the image
+    参数:
+        image_data: 二进制图片数据
+        mime_type: 图片的 MIME 类型 (例如 'image/png')
+        filename: 图片的原始文件名
     
-    Returns:
-        Tuple of (key, download_url) if successful, or None if upload fails
+    返回:
+        如果成功，返回 (key, download_url) 元组，如果上传失败则返回 None
     """
     try:
-        # Validate inputs
+        # 验证输入
         if not image_data:
-            debug_print("❌ Image data is empty")
+            debug_print("❌ 图片数据为空")
             return None
         
         if not mime_type or not mime_type.startswith('image/'):
-            debug_print(f"❌ Invalid MIME type: {mime_type}")
+            debug_print(f"❌ 无效的 MIME 类型: {mime_type}")
             return None
         
-        # Step 1: Request upload URL
-        debug_print(f"📤 Step 1: Requesting upload URL for {filename}")
+        # 步骤 1: 请求上传 URL
+        debug_print(f"📤 步骤 1: 请求 {filename} 的上传 URL")
         
-        # Get Next-Action IDs from config
-        config = get_config()
-        upload_action_id = config.get("next_action_upload")
-        signed_url_action_id = config.get("next_action_signed_url")
-        
-        if not upload_action_id or not signed_url_action_id:
-            debug_print("❌ Next-Action IDs not found in config. Please refresh tokens from dashboard.")
-            return None
-        
-        # Prepare headers for Next.js Server Action
+        # 为 Next.js Server Action 准备标头
         request_headers = get_request_headers()
         request_headers.update({
             "Accept": "text/x-component",
             "Content-Type": "text/plain;charset=UTF-8",
-            "Next-Action": upload_action_id,
+            "Next-Action": "70cb393626e05a5f0ce7dcb46977c36c139fa85f91",
             "Referer": "https://lmarena.ai/?mode=direct",
         })
         
@@ -265,13 +95,13 @@ async def upload_image_to_lmarena(image_data: bytes, mime_type: str, filename: s
                 )
                 response.raise_for_status()
             except httpx.TimeoutException:
-                debug_print("❌ Timeout while requesting upload URL")
+                debug_print("❌ 请求上传 URL 超时")
                 return None
             except httpx.HTTPError as e:
-                debug_print(f"❌ HTTP error while requesting upload URL: {e}")
+                debug_print(f"❌ 请求上传 URL 时发生 HTTP 错误: {e}")
                 return None
             
-            # Parse response - format: 0:{...}\n1:{...}\n
+            # 解析响应 - 格式: 0:{...}\n1:{...}\n
             try:
                 lines = response.text.strip().split('\n')
                 upload_data = None
@@ -281,18 +111,18 @@ async def upload_image_to_lmarena(image_data: bytes, mime_type: str, filename: s
                         break
                 
                 if not upload_data or not upload_data.get('success'):
-                    debug_print(f"❌ Failed to get upload URL: {response.text[:200]}")
+                    debug_print(f"❌ 获取上传 URL 失败: {response.text[:200]}")
                     return None
                 
                 upload_url = upload_data['data']['uploadUrl']
                 key = upload_data['data']['key']
-                debug_print(f"✅ Got upload URL and key: {key}")
+                debug_print(f"✅ 获取到上传 URL 和密钥: {key}")
             except (json.JSONDecodeError, KeyError, IndexError) as e:
-                debug_print(f"❌ Failed to parse upload URL response: {e}")
+                debug_print(f"❌ 解析上传 URL 响应失败: {e}")
                 return None
             
-            # Step 2: Upload image to R2 storage
-            debug_print(f"📤 Step 2: Uploading image to R2 storage ({len(image_data)} bytes)")
+            # 步骤 2: 上传图片到 R2 存储
+            debug_print(f"📤 步骤 2: 上传图片到 R2 存储 ({len(image_data)} 字节)")
             try:
                 response = await client.put(
                     upload_url,
@@ -301,18 +131,18 @@ async def upload_image_to_lmarena(image_data: bytes, mime_type: str, filename: s
                     timeout=60.0
                 )
                 response.raise_for_status()
-                debug_print(f"✅ Image uploaded successfully")
+                debug_print(f"✅ 图片上传成功")
             except httpx.TimeoutException:
-                debug_print("❌ Timeout while uploading image to R2 storage")
+                debug_print("❌ 上传图片到 R2 存储超时")
                 return None
             except httpx.HTTPError as e:
-                debug_print(f"❌ HTTP error while uploading image: {e}")
+                debug_print(f"❌ 上传图片时发生 HTTP 错误: {e}")
                 return None
             
-            # Step 3: Get signed download URL (uses different Next-Action)
-            debug_print(f"📤 Step 3: Requesting signed download URL")
+            # 步骤 3: 获取签名下载 URL (使用不同的 Next-Action)
+            debug_print(f"📤 步骤 3: 请求签名下载 URL")
             request_headers_step3 = request_headers.copy()
-            request_headers_step3["Next-Action"] = signed_url_action_id
+            request_headers_step3["Next-Action"] = "6064c365792a3eaf40a60a874b327fe031ea6f22d7"
             
             try:
                 response = await client.post(
@@ -323,13 +153,13 @@ async def upload_image_to_lmarena(image_data: bytes, mime_type: str, filename: s
                 )
                 response.raise_for_status()
             except httpx.TimeoutException:
-                debug_print("❌ Timeout while requesting download URL")
+                debug_print("❌ 请求下载 URL 超时")
                 return None
             except httpx.HTTPError as e:
-                debug_print(f"❌ HTTP error while requesting download URL: {e}")
+                debug_print(f"❌ 请求下载 URL 时发生 HTTP 错误: {e}")
                 return None
             
-            # Parse response
+            # 解析响应
             try:
                 lines = response.text.strip().split('\n')
                 download_data = None
@@ -339,39 +169,39 @@ async def upload_image_to_lmarena(image_data: bytes, mime_type: str, filename: s
                         break
                 
                 if not download_data or not download_data.get('success'):
-                    debug_print(f"❌ Failed to get download URL: {response.text[:200]}")
+                    debug_print(f"❌ 获取下载 URL 失败: {response.text[:200]}")
                     return None
                 
                 download_url = download_data['data']['url']
-                debug_print(f"✅ Got signed download URL: {download_url[:100]}...")
+                debug_print(f"✅ 获取到签名下载 URL: {download_url[:100]}...")
                 return (key, download_url)
             except (json.JSONDecodeError, KeyError, IndexError) as e:
-                debug_print(f"❌ Failed to parse download URL response: {e}")
+                debug_print(f"❌ 解析下载 URL 响应失败: {e}")
                 return None
             
     except Exception as e:
-        debug_print(f"❌ Unexpected error uploading image: {type(e).__name__}: {e}")
+        debug_print(f"❌ 上传图片时发生意外错误: {type(e).__name__}: {e}")
         return None
 
 async def process_message_content(content, model_capabilities: dict) -> tuple[str, List[dict]]:
     """
-    Process message content, handle images if present and model supports them.
+    处理消息内容，如果存在图片且模型支持，则处理图片。
     
-    Args:
-        content: Message content (string or list of content parts)
-        model_capabilities: Model's capability dictionary
+    参数:
+        content: 消息内容 (字符串或内容部分列表)
+        model_capabilities: 模型的 capability 字典
     
-    Returns:
-        Tuple of (text_content, experimental_attachments)
+    返回:
+        (text_content, experimental_attachments) 元组
     """
-    # Check if model supports image input
+    # 检查模型是否支持图片输入
     supports_images = model_capabilities.get('inputCapabilities', {}).get('image', False)
     
-    # If content is a string, return it as-is
+    # 如果内容是字符串，则按原样返回
     if isinstance(content, str):
         return content, []
     
-    # If content is a list (OpenAI format with multiple parts)
+    # 如果内容是列表 (OpenAI 格式，包含多个部分)
     if isinstance(content, list):
         text_parts = []
         attachments = []
@@ -388,88 +218,88 @@ async def process_message_content(content, model_capabilities: dict) -> tuple[st
                     else:
                         url = image_url
                     
-                    # Handle base64-encoded images
+                    # 处理 base64 编码的图片
                     if url.startswith('data:'):
-                        # Format: data:image/png;base64,iVBORw0KGgo...
+                        # 格式: data:image/png;base64,iVBORw0KGgo...
                         try:
-                            # Validate and parse data URI
+                            # 验证并解析数据 URI
                             if ',' not in url:
-                                debug_print(f"❌ Invalid data URI format (no comma separator)")
+                                debug_print(f"❌ 无效的数据 URI 格式（无逗号分隔符）")
                                 continue
                             
                             header, data = url.split(',', 1)
                             
-                            # Parse MIME type
+                            # 解析 MIME 类型
                             if ';' not in header or ':' not in header:
-                                debug_print(f"❌ Invalid data URI header format")
+                                debug_print(f"❌ 无效的数据 URI 标头格式")
                                 continue
                             
                             mime_type = header.split(';')[0].split(':')[1]
                             
-                            # Validate MIME type
+                            # 验证 MIME 类型
                             if not mime_type.startswith('image/'):
-                                debug_print(f"❌ Invalid MIME type: {mime_type}")
+                                debug_print(f"❌ 无效的 MIME 类型: {mime_type}")
                                 continue
                             
-                            # Decode base64
+                            # 解码 base64
                             try:
                                 image_data = base64.b64decode(data)
                             except Exception as e:
-                                debug_print(f"❌ Failed to decode base64 data: {e}")
+                                debug_print(f"❌ 解码 base64 数据失败: {e}")
                                 continue
                             
-                            # Validate image size (max 10MB)
+                            # 验证图片大小 (最大 10MB)
                             if len(image_data) > 10 * 1024 * 1024:
-                                debug_print(f"❌ Image too large: {len(image_data)} bytes (max 10MB)")
+                                debug_print(f"❌ 图片过大: {len(image_data)} 字节 (最大 10MB)")
                                 continue
                             
-                            # Generate filename
+                            # 生成文件名
                             ext = mimetypes.guess_extension(mime_type) or '.png'
                             filename = f"upload-{uuid.uuid4()}{ext}"
                             
-                            debug_print(f"🖼️  Processing base64 image: {filename}, size: {len(image_data)} bytes")
+                            debug_print(f"🖼️  处理 base64 图片: {filename}, 大小: {len(image_data)} 字节")
                             
-                            # Upload to LMArena
+                            # 上传到 LMArena
                             upload_result = await upload_image_to_lmarena(image_data, mime_type, filename)
                             
                             if upload_result:
                                 key, download_url = upload_result
-                                # Add as attachment in LMArena format
+                                # 添加为 LMArena 格式的附件
                                 attachments.append({
                                     "name": key,
                                     "contentType": mime_type,
                                     "url": download_url
                                 })
-                                debug_print(f"✅ Image uploaded and added to attachments")
+                                debug_print(f"✅ 图片已上传并添加到附件")
                             else:
-                                debug_print(f"⚠️  Failed to upload image, skipping")
+                                debug_print(f"⚠️  上传图片失败，跳过")
                         except Exception as e:
-                            debug_print(f"❌ Unexpected error processing base64 image: {type(e).__name__}: {e}")
+                            debug_print(f"❌ 处理 base64 图片时发生意外错误: {type(e).__name__}: {e}")
                     
-                    # Handle URL images (direct URLs)
+                    # 处理 URL 图片 (直接 URL)
                     elif url.startswith('http://') or url.startswith('https://'):
-                        # For external URLs, we'd need to download and re-upload
-                        # For now, skip this case
-                        debug_print(f"⚠️  External image URLs not yet supported: {url[:100]}")
+                        # 对于外部 URL，我们需要下载并重新上传
+                        # 目前跳过此情况
+                        debug_print(f"⚠️  尚不支持外部图片 URL: {url[:100]}")
                         
                 elif part.get('type') == 'image_url' and not supports_images:
-                    debug_print(f"⚠️  Image provided but model doesn't support images")
+                    debug_print(f"⚠️  提供了图片，但模型不支持图片")
         
-        # Combine text parts
+        # 合并文本部分
         text_content = '\n'.join(text_parts).strip()
         return text_content, attachments
     
-    # Fallback
+    # 回退
     return str(content), []
 
 app = FastAPI()
 
-# --- Constants & Global State ---
+# --- 常量和全局状态 ---
 CONFIG_FILE = "config.json"
 MODELS_FILE = "models.json"
 API_KEY_HEADER = APIKeyHeader(name="Authorization")
 
-# In-memory stores
+# 内存存储
 # { "api_key": { "conversation_id": session_data } }
 chat_sessions: Dict[str, Dict[str, dict]] = defaultdict(dict)
 # { "session_id": "username" }
@@ -478,57 +308,36 @@ dashboard_sessions = {}
 api_key_usage = defaultdict(list)
 # { "model_id": count }
 model_usage_stats = defaultdict(int)
-# Token cycling: current index for round-robin selection
-current_token_index = 0
-# Track which token is assigned to each conversation (conversation_id -> token)
-conversation_tokens: Dict[str, str] = {}
-# Track failed tokens per request to avoid retrying with same token
-request_failed_tokens: Dict[str, set] = {}
 
-# --- Helper Functions ---
+# --- 辅助函数 ---
 
 def get_config():
     try:
         with open(CONFIG_FILE, "r") as f:
             config = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError) as e:
-        debug_print(f"⚠️  Config file error: {e}, using defaults")
-        config = {}
-    except Exception as e:
-        debug_print(f"⚠️  Unexpected error reading config: {e}, using defaults")
+    except (FileNotFoundError, json.JSONDecodeError):
         config = {}
 
-    # Ensure default keys exist
-    try:
-        config.setdefault("password", "admin")
-        config.setdefault("auth_token", "")
-        config.setdefault("auth_tokens", [])  # Multiple auth tokens
-        config.setdefault("cf_clearance", "")
-        config.setdefault("api_keys", [])
-        config.setdefault("usage_stats", {})
-    except Exception as e:
-        debug_print(f"⚠️  Error setting config defaults: {e}")
+    # 确保默认键存在
+    config.setdefault("password", "admin")
+    config.setdefault("auth_token", "")
+    config.setdefault("cf_clearance", "")
+    config.setdefault("api_keys", [])
+    config.setdefault("usage_stats", {})
     
     return config
 
 def load_usage_stats():
-    """Load usage stats from config into memory"""
+    """从配置加载使用统计到内存"""
     global model_usage_stats
-    try:
-        config = get_config()
-        model_usage_stats = defaultdict(int, config.get("usage_stats", {}))
-    except Exception as e:
-        debug_print(f"⚠️  Error loading usage stats: {e}, using empty stats")
-        model_usage_stats = defaultdict(int)
+    config = get_config()
+    model_usage_stats = defaultdict(int, config.get("usage_stats", {}))
 
 def save_config(config):
-    try:
-        # Persist in-memory stats to the config dict before saving
-        config["usage_stats"] = dict(model_usage_stats)
-        with open(CONFIG_FILE, "w") as f:
-            json.dump(config, f, indent=4)
-    except Exception as e:
-        debug_print(f"❌ Error saving config: {e}")
+    # 保存前将内存中的统计数据持久化到配置字典
+    config["usage_stats"] = dict(model_usage_stats)
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(config, f, indent=4)
 
 def get_models():
     try:
@@ -538,78 +347,22 @@ def get_models():
         return []
 
 def save_models(models):
-    try:
-        with open(MODELS_FILE, "w") as f:
-            json.dump(models, f, indent=2)
-    except Exception as e:
-        debug_print(f"❌ Error saving models: {e}")
-
+    with open(MODELS_FILE, "w") as f:
+        json.dump(models, f, indent=2)
 
 def get_request_headers():
-    """Get request headers with the first available auth token (for compatibility)"""
     config = get_config()
+    auth_token = config.get("auth_token", "").strip()
+    if not auth_token:
+        raise HTTPException(status_code=500, detail="仪表板中未设置 Arena 认证令牌。")
     
-    # Try to get token from auth_tokens first, then fallback to single token
-    auth_tokens = config.get("auth_tokens", [])
-    if auth_tokens:
-        token = auth_tokens[0]  # Just use first token for non-API requests
-    else:
-        token = config.get("auth_token", "").strip()
-        if not token:
-            raise HTTPException(status_code=500, detail="Arena auth token not set in dashboard.")
-    
-    return get_request_headers_with_token(token)
-
-def get_request_headers_with_token(token: str):
-    """Get request headers with a specific auth token"""
-    config = get_config()
     cf_clearance = config.get("cf_clearance", "").strip()
     return {
-        "Content-Type": "text/plain;charset=UTF-8",
-        "Cookie": f"cf_clearance={cf_clearance}; arena-auth-prod-v1={token}",
+        "Content-Type": "application/json",
+        "Cookie": f"cf_clearance={cf_clearance}; arena-auth-prod-v1={auth_token}",
     }
 
-def get_next_auth_token(exclude_tokens: set = None):
-    """Get next auth token using round-robin selection
-    
-    Args:
-        exclude_tokens: Set of tokens to exclude from selection (e.g., already tried tokens)
-    """
-    global current_token_index
-    config = get_config()
-    
-    # Get all available tokens
-    auth_tokens = config.get("auth_tokens", [])
-    if not auth_tokens:
-        raise HTTPException(status_code=500, detail="No auth tokens configured")
-    
-    # Filter out excluded tokens
-    if exclude_tokens:
-        available_tokens = [t for t in auth_tokens if t not in exclude_tokens]
-        if not available_tokens:
-            raise HTTPException(status_code=500, detail="No more auth tokens available to try")
-    else:
-        available_tokens = auth_tokens
-    
-    # Round-robin selection from available tokens
-    token = available_tokens[current_token_index % len(available_tokens)]
-    current_token_index = (current_token_index + 1) % len(auth_tokens)
-    return token
-
-def remove_auth_token(token: str):
-    """Remove an expired/invalid auth token from the list"""
-    try:
-        config = get_config()
-        auth_tokens = config.get("auth_tokens", [])
-        if token in auth_tokens:
-            auth_tokens.remove(token)
-            config["auth_tokens"] = auth_tokens
-            save_config(config)
-            debug_print(f"🗑️  Removed expired token from list: {token[:20]}...")
-    except Exception as e:
-        debug_print(f"⚠️  Error removing auth token: {e}")
-
-# --- Dashboard Authentication ---
+# --- 仪表板认证 ---
 
 async def get_current_session(request: Request):
     session_id = request.cookies.get("session_id")
@@ -617,39 +370,39 @@ async def get_current_session(request: Request):
         return dashboard_sessions[session_id]
     return None
 
-# --- API Key Authentication & Rate Limiting ---
+# --- API 密钥认证和速率限制 ---
 
 async def rate_limit_api_key(key: str = Depends(API_KEY_HEADER)):
     if not key.startswith("Bearer "):
         raise HTTPException(
             status_code=401, 
-            detail="Invalid Authorization header. Expected 'Bearer YOUR_API_KEY'"
+            detail="无效的 Authorization 标头。应为 'Bearer YOUR_API_KEY'"
         )
     
-    # Remove "Bearer " prefix and strip whitespace
+    # 移除 "Bearer " 前缀并去除空格
     api_key_str = key[7:].strip()
     config = get_config()
     
     key_data = next((k for k in config["api_keys"] if k["key"] == api_key_str), None)
     if not key_data:
-        raise HTTPException(status_code=401, detail="Invalid API Key.")
+        raise HTTPException(status_code=401, detail="无效的 API 密钥。")
 
-    # Rate Limiting
+    # 速率限制
     rate_limit = key_data.get("rpm", 60)
     current_time = time.time()
     
-    # Clean up old timestamps (older than 60 seconds)
+    # 清理旧的时间戳 (超过 60 秒)
     api_key_usage[api_key_str] = [t for t in api_key_usage[api_key_str] if current_time - t < 60]
 
     if len(api_key_usage[api_key_str]) >= rate_limit:
-        # Calculate seconds until oldest request expires (60 seconds window)
+        # 计算直到最旧请求过期的时间 (60 秒窗口)
         oldest_timestamp = min(api_key_usage[api_key_str])
         retry_after = int(60 - (current_time - oldest_timestamp))
-        retry_after = max(1, retry_after)  # At least 1 second
+        retry_after = max(1, retry_after)  # 至少 1 秒
         
         raise HTTPException(
             status_code=429,
-            detail="Rate limit exceeded. Please try again later.",
+            detail="超出速率限制。请稍后再试。",
             headers={"Retry-After": str(retry_after)}
         )
         
@@ -657,63 +410,31 @@ async def rate_limit_api_key(key: str = Depends(API_KEY_HEADER)):
     
     return key_data
 
-# --- Core Logic ---
+# --- 核心逻辑 ---
 
 async def get_initial_data():
-    debug_print("Starting initial data retrieval...")
+    print("开始初始数据获取...")
     try:
         async with AsyncCamoufox(headless=True) as browser:
             page = await browser.new_page()
             
-            # Set up route interceptor BEFORE navigating
-            debug_print("  🎯 Setting up route interceptor for JS chunks...")
-            captured_responses = []
-            
-            async def capture_js_route(route):
-                """Intercept and capture JS chunk responses"""
-                url = route.request.url
-                if '/_next/static/chunks/' in url and '.js' in url:
-                    try:
-                        # Fetch the original response
-                        response = await route.fetch()
-                        # Get the response body
-                        body = await response.body()
-                        text = body.decode('utf-8')
-
-                        # debug_print(f"    📥 Captured JS chunk: {url.split('/')[-1][:50]}...")
-                        captured_responses.append({'url': url, 'text': text})
-                        
-                        # Continue with the original response (don't modify)
-                        await route.fulfill(response=response, body=body)
-                    except Exception as e:
-                        debug_print(f"    ⚠️  Error capturing response: {e}")
-                        # If something fails, just continue normally
-                        await route.continue_()
-                else:
-                    # Not a JS chunk, just continue normally
-                    await route.continue_()
-            
-            # Register the route interceptor
-            await page.route('**/*', capture_js_route)
-            
-            debug_print("Navigating to lmarena.ai...")
+            print("正在导航至 lmarena.ai...")
             await page.goto("https://lmarena.ai/", wait_until="domcontentloaded")
 
-            debug_print("Waiting for Cloudflare challenge to complete...")
+            print("正在等待 Cloudflare 验证完成...")
             try:
                 await page.wait_for_function(
                     "() => document.title.indexOf('Just a moment...') === -1", 
                     timeout=45000
                 )
-                debug_print("✅ Cloudflare challenge passed.")
+                print("✅ Cloudflare 验证通过。")
             except Exception as e:
-                debug_print(f"❌ Cloudflare challenge took too long or failed: {e}")
+                print(f"❌ Cloudflare 验证耗时过长或失败: {e}")
                 return
 
-            # Give it time to capture all JS responses
             await asyncio.sleep(5)
 
-            # Extract cf_clearance
+            # 提取 cf_clearance
             cookies = await page.context.cookies()
             cf_clearance_cookie = next((c for c in cookies if c["name"] == "cf_clearance"), None)
             
@@ -721,12 +442,12 @@ async def get_initial_data():
             if cf_clearance_cookie:
                 config["cf_clearance"] = cf_clearance_cookie["value"]
                 save_config(config)
-                debug_print(f"✅ Saved cf_clearance token: {cf_clearance_cookie['value'][:20]}...")
+                print(f"✅ 已保存 cf_clearance 令牌: {cf_clearance_cookie['value'][:20]}...")
             else:
-                debug_print("⚠️ Could not find cf_clearance cookie.")
+                print("⚠️ 找不到 cf_clearance cookie。")
 
-            # Extract models
-            debug_print("Extracting models from page...")
+            # 提取模型
+            print("正在从页面提取模型...")
             try:
                 body = await page.content()
                 match = re.search(r'{\\"initialModels\\":(\[.*?\]),\\"initialModel[A-Z]Id', body, re.DOTALL)
@@ -734,123 +455,46 @@ async def get_initial_data():
                     models_json = match.group(1).encode().decode('unicode_escape')
                     models = json.loads(models_json)
                     save_models(models)
-                    debug_print(f"✅ Saved {len(models)} models")
+                    print(f"✅ 已保存 {len(models)} 个模型")
                 else:
-                    debug_print("⚠️ Could not find models in page")
+                    print("⚠️ 页面中找不到模型")
             except Exception as e:
-                debug_print(f"❌ Error extracting models: {e}")
+                print(f"❌ 提取模型时出错: {e}")
 
-            # Extract Next-Action IDs from captured JavaScript responses
-            debug_print(f"\nExtracting Next-Action IDs from {len(captured_responses)} captured JS responses...")
-            try:
-                upload_action_id = None
-                signed_url_action_id = None
-                
-                if not captured_responses:
-                    debug_print("  ⚠️  No JavaScript responses were captured")
-                else:
-                    debug_print(f"  📦 Processing {len(captured_responses)} JavaScript chunk files")
-                    
-                    for item in captured_responses:
-                        url = item['url']
-                        text = item['text']
-                        
-                        try:
-                            # debug_print(f"  🔎 Checking: {url.split('/')[-1][:50]}...")
-                            
-                            # Look for getSignedUrl action ID (ID captured in group 1)
-                            signed_url_matches = re.findall(
-                                r'\(0,[a-zA-Z].createServerReference\)\(\"([\w\d]*?)\",[a-zA-Z_$][\w$]*\.callServer,void 0,[a-zA-Z_$][\w$]*\.findSourceMapURL,["\']getSignedUrl["\']\)',
-                                text
-                            )
-                            
-                            # Look for generateUploadUrl action ID (ID captured in group 1)
-                            upload_matches = re.findall(
-                                r'\(0,[a-zA-Z].createServerReference\)\(\"([\w\d]*?)\",[a-zA-Z_$][\w$]*\.callServer,void 0,[a-zA-Z_$][\w$]*\.findSourceMapURL,["\']generateUploadUrl["\']\)',
-                                text
-                            )
-                            
-                            # Process matches
-                            if signed_url_matches and not signed_url_action_id:
-                                signed_url_action_id = signed_url_matches[0]
-                                debug_print(f"    📥 Found getSignedUrl action ID: {signed_url_action_id[:20]}...")
-                            
-                            if upload_matches and not upload_action_id:
-                                upload_action_id = upload_matches[0]
-                                debug_print(f"    📤 Found generateUploadUrl action ID: {upload_action_id[:20]}...")
-                            
-                            if upload_action_id and signed_url_action_id:
-                                debug_print(f"  ✅ Found both action IDs, stopping search")
-                                break
-                                
-                        except Exception as e:
-                            debug_print(f"    ⚠️  Error parsing response from {url}: {e}")
-                            continue
-                
-                # Save the action IDs to config
-                if upload_action_id:
-                    config["next_action_upload"] = upload_action_id
-                if signed_url_action_id:
-                    config["next_action_signed_url"] = signed_url_action_id
-                
-                if upload_action_id and signed_url_action_id:
-                    save_config(config)
-                    debug_print(f"\n✅ Saved both Next-Action IDs to config")
-                    debug_print(f"   Upload: {upload_action_id}")
-                    debug_print(f"   Signed URL: {signed_url_action_id}")
-                elif upload_action_id or signed_url_action_id:
-                    save_config(config)
-                    debug_print(f"\n⚠️ Saved partial Next-Action IDs:")
-                    if upload_action_id:
-                        debug_print(f"   Upload: {upload_action_id}")
-                    if signed_url_action_id:
-                        debug_print(f"   Signed URL: {signed_url_action_id}")
-                else:
-                    debug_print(f"\n⚠️ Could not extract Next-Action IDs from JavaScript chunks")
-                    debug_print(f"   This is optional - image upload may not work without them")
-                    
-            except Exception as e:
-                debug_print(f"❌ Error extracting Next-Action IDs: {e}")
-                debug_print(f"   This is optional - continuing without them")
-
-            debug_print("✅ Initial data retrieval complete")
+            print("✅ 初始数据获取完成")
     except Exception as e:
-        debug_print(f"❌ An error occurred during initial data retrieval: {e}")
+        print(f"❌ 初始数据获取期间发生错误: {e}")
 
 async def periodic_refresh_task():
-    """Background task to refresh cf_clearance and models every 30 minutes"""
+    """后台任务：每 30 分钟刷新 cf_clearance 和模型"""
     while True:
         try:
-            # Wait 30 minutes (1800 seconds)
+            # 等待 30 分钟 (1800 秒)
             await asyncio.sleep(1800)
-            debug_print("\n" + "="*60)
-            debug_print("🔄 Starting scheduled 30-minute refresh...")
-            debug_print("="*60)
+            print("\n" + "="*60)
+            print("🔄 开始计划的 30 分钟刷新...")
+            print("="*60)
             await get_initial_data()
-            debug_print("✅ Scheduled refresh completed")
-            debug_print("="*60 + "\n")
+            print("✅ 计划刷新完成")
+            print("="*60 + "\n")
         except Exception as e:
-            debug_print(f"❌ Error in periodic refresh task: {e}")
-            # Continue the loop even if there's an error
+            print(f"❌ 定期刷新任务出错: {e}")
+            # 即使出错也继续循环
             continue
 
 @app.on_event("startup")
 async def startup_event():
-    try:
-        # Ensure config and models files exist
-        save_config(get_config())
-        save_models(get_models())
-        # Load usage stats from config
-        load_usage_stats()
-        # Start initial data fetch
-        asyncio.create_task(get_initial_data())
-        # Start periodic refresh task (every 30 minutes)
-        asyncio.create_task(periodic_refresh_task())
-    except Exception as e:
-        debug_print(f"❌ Error during startup: {e}")
-        # Continue anyway - server should still start
+    # 确保配置和模型文件存在
+    save_config(get_config())
+    save_models(get_models())
+    # 从配置加载使用统计
+    load_usage_stats()
+    # 启动初始数据获取
+    asyncio.create_task(get_initial_data())
+    # 启动定期刷新任务 (每 30 分钟)
+    asyncio.create_task(periodic_refresh_task())
 
-# --- UI Endpoints (Login/Dashboard) ---
+# --- UI 端点 (登录/仪表板) ---
 
 @app.get("/", response_class=HTMLResponse)
 async def root_redirect():
@@ -861,7 +505,7 @@ async def login_page(request: Request, error: Optional[str] = None):
     if await get_current_session(request):
         return RedirectResponse(url="/dashboard")
     
-    error_msg = '<div class="error-message">密码错误，请重试。</div>' if error else ''
+    error_msg = '<div class="error-message">密码无效。请重试。</div>' if error else ''
     
     return f"""
         <!DOCTYPE html>
@@ -955,7 +599,7 @@ async def login_page(request: Request, error: Optional[str] = None):
                 <form action="/login" method="post">
                     <div class="form-group">
                         <label for="password">密码</label>
-                        <input type="password" id="password" name="password" placeholder="请输入您的密码" required autofocus>
+                        <input type="password" id="password" name="password" placeholder="输入您的密码" required autofocus>
                     </div>
                     <button type="submit">登录</button>
                 </form>
@@ -989,21 +633,10 @@ async def dashboard(session: str = Depends(get_current_session)):
     if not session:
         return RedirectResponse(url="/login")
 
-    try:
-        config = get_config()
-        models = get_models()
-    except Exception as e:
-        debug_print(f"❌ Error loading dashboard data: {e}")
-        # Return error page
-        return HTMLResponse(f"""
-            <html><body style="font-family: sans-serif; padding: 40px; text-align: center;">
-                <h1>⚠️ 仪表板错误</h1>
-                <p>加载配置失败: {str(e)}</p>
-                <p><a href="/logout">退出登录</a> | <a href="/dashboard">重试</a></p>
-            </body></html>
-        """, status_code=500)
+    config = get_config()
+    models = get_models()
 
-    # Render API Keys
+    # 渲染 API 密钥
     keys_html = ""
     for key in config["api_keys"]:
         created_date = time.strftime('%Y-%m-%d %H:%M', time.localtime(key.get('created', 0)))
@@ -1014,7 +647,7 @@ async def dashboard(session: str = Depends(get_current_session)):
                 <td><span class="badge">{key['rpm']} RPM</span></td>
                 <td><small>{created_date}</small></td>
                 <td>
-                    <form action='/delete-key' method='post' style='margin:0;' onsubmit='return confirm("确定要删除此 API 密钥吗？");'>
+                    <form action='/delete-key' method='post' style='margin:0;' onsubmit='return confirm("删除此 API 密钥？");'>
                         <input type='hidden' name='key_id' value='{key['key']}'>
                         <button type='submit' class='btn-delete'>删除</button>
                     </form>
@@ -1022,16 +655,16 @@ async def dashboard(session: str = Depends(get_current_session)):
             </tr>
         """
 
-    # Render Models (limit to first 20 with text output)
+    # 渲染模型（限制前 20 个具有文本输出的模型）
     text_models = [m for m in models if m.get('capabilities', {}).get('outputCapabilities', {}).get('text')]
     models_html = ""
     for i, model in enumerate(text_models[:20]):
         rank = model.get('rank', '?')
-        org = model.get('organization', '未知')
+        org = model.get('organization', 'Unknown')
         models_html += f"""
             <div class="model-card">
                 <div class="model-header">
-                    <span class="model-name">{model.get('publicName', '未命名')}</span>
+                    <span class="model-name">{model.get('publicName', 'Unnamed')}</span>
                     <span class="model-rank">排名 {rank}</span>
                 </div>
                 <div class="model-org">{org}</div>
@@ -1041,7 +674,7 @@ async def dashboard(session: str = Depends(get_current_session)):
     if not models_html:
         models_html = '<div class="no-data">未找到模型。令牌可能无效或已过期。</div>'
 
-    # Render Stats
+    # 渲染统计数据
     stats_html = ""
     if model_usage_stats:
         for model, count in sorted(model_usage_stats.items(), key=lambda x: x[1], reverse=True)[:10]:
@@ -1049,21 +682,21 @@ async def dashboard(session: str = Depends(get_current_session)):
     else:
         stats_html = "<tr><td colspan='2' class='no-data'>暂无使用数据</td></tr>"
 
-    # Check token status
+    # 检查令牌状态
     token_status = "✅ 已配置" if config.get("auth_token") else "❌ 未设置"
     token_class = "status-good" if config.get("auth_token") else "status-bad"
     
     cf_status = "✅ 已配置" if config.get("cf_clearance") else "❌ 未设置"
     cf_class = "status-good" if config.get("cf_clearance") else "status-bad"
     
-    # Get recent activity count (last 24 hours)
+    # 获取最近活动计数（过去 24 小时）
     recent_activity = sum(1 for timestamps in api_key_usage.values() for t in timestamps if time.time() - t < 86400)
 
     return f"""
         <!DOCTYPE html>
         <html>
         <head>
-            <title>仪表板 - LMArena Bridge</title>
+            <title>Dashboard - LMArena Bridge</title>
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
             <style>
@@ -1368,32 +1001,15 @@ async def dashboard(session: str = Depends(get_current_session)):
                 <!-- Arena Auth Token -->
                 <div class="section">
                     <div class="section-header">
-                        <h2>🔐 Arena 认证令牌</h2>
+                        <h2>🔐 Arena 认证</h2>
                         <span class="status-badge {token_class}">{token_status}</span>
                     </div>
-                    
-                    <h3 style="margin-bottom: 15px; font-size: 16px;">多个认证令牌（轮询）</h3>
-                    <p style="color: #666; margin-bottom: 15px;">添加多个令牌以进行自动循环。每个对话将使用一致的令牌。</p>
-                    
-                    {''.join([f'''
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 6px;">
-                        <code style="flex: 1; font-family: 'Courier New', monospace; font-size: 12px; word-break: break-all;">{token[:50]}...</code>
-                        <form action="/delete-auth-token" method="post" style="margin: 0;" onsubmit="return confirm('确定要删除此令牌吗？');">
-                            <input type="hidden" name="token_index" value="{i}">
-                            <button type="submit" class="btn-delete">删除</button>
-                        </form>
-                    </div>
-                    ''' for i, token in enumerate(config.get("auth_tokens", []))])}
-                    
-                    {('<div class="no-data">未配置令牌。请在下方添加令牌。</div>' if not config.get("auth_tokens") else '')}
-                    
-                    <h3 style="margin-top: 25px; margin-bottom: 15px; font-size: 16px;">添加新令牌</h3>
-                    <form action="/add-auth-token" method="post">
+                    <form action="/update-auth-token" method="post">
                         <div class="form-group">
-                            <label for="new_auth_token">新的 Arena 认证令牌</label>
-                            <textarea id="new_auth_token" name="new_auth_token" placeholder="在此粘贴新的 arena-auth-prod-v1 令牌" required></textarea>
+                            <label for="auth_token">Arena 认证令牌</label>
+                            <textarea id="auth_token" name="auth_token" placeholder="在此粘贴您的 arena-auth-prod-v1 令牌">{config.get("auth_token", "")}</textarea>
                         </div>
-                        <button type="submit">添加令牌</button>
+                        <button type="submit">更新令牌</button>
                     </form>
                 </div>
 
@@ -1463,7 +1079,7 @@ async def dashboard(session: str = Depends(get_current_session)):
                             <canvas id="modelPieChart" style="max-height: 300px;"></canvas>
                         </div>
                         <div>
-                            <h3 style="text-align: center; margin-bottom: 15px; font-size: 16px; color: #666;">各模型请求数</h3>
+                            <h3 style="text-align: center; margin-bottom: 15px; font-size: 16px; color: #666;">按模型的请求计数</h3>
                             <canvas id="modelBarChart" style="max-height: 300px;"></canvas>
                         </div>
                     </div>
@@ -1618,83 +1234,43 @@ async def update_auth_token(session: str = Depends(get_current_session), auth_to
 async def create_key(session: str = Depends(get_current_session), name: str = Form(...), rpm: int = Form(...)):
     if not session:
         return RedirectResponse(url="/login")
-    try:
-        config = get_config()
-        new_key = {
-            "name": name.strip(),
-            "key": f"sk-lmab-{uuid.uuid4()}",
-            "rpm": max(1, min(rpm, 1000)),  # Clamp between 1-1000
-            "created": int(time.time())
-        }
-        config["api_keys"].append(new_key)
-        save_config(config)
-    except Exception as e:
-        debug_print(f"❌ Error creating key: {e}")
+    config = get_config()
+    new_key = {
+        "name": name.strip(),
+        "key": f"sk-lmab-{uuid.uuid4()}",
+        "rpm": max(1, min(rpm, 1000)),  # Clamp between 1-1000
+        "created": int(time.time())
+    }
+    config["api_keys"].append(new_key)
+    save_config(config)
     return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
 
 @app.post("/delete-key")
 async def delete_key(session: str = Depends(get_current_session), key_id: str = Form(...)):
     if not session:
         return RedirectResponse(url="/login")
-    try:
-        config = get_config()
-        config["api_keys"] = [k for k in config["api_keys"] if k["key"] != key_id]
-        save_config(config)
-    except Exception as e:
-        debug_print(f"❌ Error deleting key: {e}")
-    return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
-
-@app.post("/add-auth-token")
-async def add_auth_token(session: str = Depends(get_current_session), new_auth_token: str = Form(...)):
-    if not session:
-        return RedirectResponse(url="/login")
-    try:
-        config = get_config()
-        token = new_auth_token.strip()
-        if token and token not in config.get("auth_tokens", []):
-            if "auth_tokens" not in config:
-                config["auth_tokens"] = []
-            config["auth_tokens"].append(token)
-            save_config(config)
-    except Exception as e:
-        debug_print(f"❌ Error adding auth token: {e}")
-    return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
-
-@app.post("/delete-auth-token")
-async def delete_auth_token(session: str = Depends(get_current_session), token_index: int = Form(...)):
-    if not session:
-        return RedirectResponse(url="/login")
-    try:
-        config = get_config()
-        auth_tokens = config.get("auth_tokens", [])
-        if 0 <= token_index < len(auth_tokens):
-            auth_tokens.pop(token_index)
-            config["auth_tokens"] = auth_tokens
-            save_config(config)
-    except Exception as e:
-        debug_print(f"❌ Error deleting auth token: {e}")
+    config = get_config()
+    config["api_keys"] = [k for k in config["api_keys"] if k["key"] != key_id]
+    save_config(config)
     return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
 
 @app.post("/refresh-tokens")
 async def refresh_tokens(session: str = Depends(get_current_session)):
     if not session:
         return RedirectResponse(url="/login")
-    try:
-        await get_initial_data()
-    except Exception as e:
-        debug_print(f"❌ Error refreshing tokens: {e}")
+    await get_initial_data()
     return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
 
-# --- OpenAI Compatible API Endpoints ---
+# --- OpenAI 兼容 API 端点 ---
 
 @app.get("/api/v1/health")
 async def health_check():
-    """Health check endpoint for monitoring"""
+    """用于监控的健康检查端点"""
     try:
         models = get_models()
         config = get_config()
         
-        # Basic health checks
+        # 基本健康检查
         has_cf_clearance = bool(config.get("cf_clearance"))
         has_models = len(models) > 0
         has_api_keys = len(config.get("api_keys", [])) > 0
@@ -1720,85 +1296,79 @@ async def health_check():
 
 @app.get("/api/v1/models")
 async def list_models(api_key: dict = Depends(rate_limit_api_key)):
-    try:
-        models = get_models()
-        
-        # Filter for models with text OR search OR image output capability and an organization (exclude stealth models)
-        # Always include image models - no special key needed
-        valid_models = [m for m in models 
-                       if (m.get('capabilities', {}).get('outputCapabilities', {}).get('text')
-                           or m.get('capabilities', {}).get('outputCapabilities', {}).get('search')
-                           or m.get('capabilities', {}).get('outputCapabilities', {}).get('image'))
-                       and m.get('organization')]
-        
-        return {
-            "object": "list",
-            "data": [
-                {
-                    "id": model.get("publicName"),
-                    "object": "model",
-                    "created": int(time.time()),
-                    "owned_by": model.get("organization", "lmarena")
-                } for model in valid_models if model.get("publicName")
-            ]
-        }
-    except Exception as e:
-        debug_print(f"❌ Error listing models: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to load models: {str(e)}")
+    models = get_models()
+    # 过滤具有文本或搜索输出能力且有组织（排除隐形模型）的模型
+    # 包括聊天、搜索和 Web 开发模型
+    valid_models = [m for m in models 
+                   if (m.get('capabilities', {}).get('outputCapabilities', {}).get('text')
+                       or m.get('capabilities', {}).get('outputCapabilities', {}).get('search'))
+                   and m.get('organization')]
+    
+    return {
+        "object": "list",
+        "data": [
+            {
+                "id": model.get("publicName"),
+                "object": "model",
+                "created": int(time.time()),
+                "owned_by": model.get("organization", "lmarena")
+            } for model in valid_models if model.get("publicName")
+        ]
+    }
 
 @app.post("/api/v1/chat/completions")
 async def api_chat_completions(request: Request, api_key: dict = Depends(rate_limit_api_key)):
     debug_print("\n" + "="*80)
-    debug_print("🔵 NEW API REQUEST RECEIVED")
+    debug_print("🔵 收到新的 API 请求")
     debug_print("="*80)
     
     try:
-        # Parse request body with error handling
+        # 解析请求体并处理错误
         try:
             body = await request.json()
         except json.JSONDecodeError as e:
-            debug_print(f"❌ Invalid JSON in request body: {e}")
-            raise HTTPException(status_code=400, detail=f"Invalid JSON in request body: {str(e)}")
+            debug_print(f"❌ 请求体中的 JSON 无效: {e}")
+            raise HTTPException(status_code=400, detail=f"请求体中的 JSON 无效: {str(e)}")
         except Exception as e:
-            debug_print(f"❌ Failed to read request body: {e}")
-            raise HTTPException(status_code=400, detail=f"Failed to read request body: {str(e)}")
+            debug_print(f"❌ 读取请求体失败: {e}")
+            raise HTTPException(status_code=400, detail=f"读取请求体失败: {str(e)}")
         
-        debug_print(f"📥 Request body keys: {list(body.keys())}")
+        debug_print(f"📥 请求体键: {list(body.keys())}")
         
-        # Validate required fields
+        # 验证必填字段
         model_public_name = body.get("model")
         messages = body.get("messages", [])
         stream = body.get("stream", False)
         
-        debug_print(f"🌊 Stream mode: {stream}")
-        debug_print(f"🤖 Requested model: {model_public_name}")
-        debug_print(f"💬 Number of messages: {len(messages)}")
+        debug_print(f"🌊 流模式: {stream}")
+        debug_print(f"🤖 请求的模型: {model_public_name}")
+        debug_print(f"💬 消息数量: {len(messages)}")
         
         if not model_public_name:
-            debug_print("❌ Missing 'model' in request")
-            raise HTTPException(status_code=400, detail="Missing 'model' in request body.")
+            debug_print("❌ 请求中缺少 'model'")
+            raise HTTPException(status_code=400, detail="请求体中缺少 'model'。")
         
         if not messages:
-            debug_print("❌ Missing 'messages' in request")
-            raise HTTPException(status_code=400, detail="Missing 'messages' in request body.")
+            debug_print("❌ 请求中缺少 'messages'")
+            raise HTTPException(status_code=400, detail="请求体中缺少 'messages'。")
         
         if not isinstance(messages, list):
-            debug_print("❌ 'messages' must be an array")
-            raise HTTPException(status_code=400, detail="'messages' must be an array.")
+            debug_print("❌ 'messages' 必须是数组")
+            raise HTTPException(status_code=400, detail="'messages' 必须是数组。")
         
         if len(messages) == 0:
-            debug_print("❌ 'messages' array is empty")
-            raise HTTPException(status_code=400, detail="'messages' array cannot be empty.")
+            debug_print("❌ 'messages' 数组为空")
+            raise HTTPException(status_code=400, detail="'messages' 数组不能为空。")
 
-        # Find model ID from public name
+        # 从公共名称查找模型 ID
         try:
             models = get_models()
-            debug_print(f"📚 Total models loaded: {len(models)}")
+            debug_print(f"📚 已加载模型总数: {len(models)}")
         except Exception as e:
-            debug_print(f"❌ Failed to load models: {e}")
+            debug_print(f"❌ 加载模型失败: {e}")
             raise HTTPException(
                 status_code=503,
-                detail="Failed to load model list from LMArena. Please try again later."
+                detail="从 LMArena 加载模型列表失败。请稍后再试。"
             )
         
         model_id = None
@@ -1813,145 +1383,149 @@ async def api_chat_completions(request: Request, api_key: dict = Depends(rate_li
                 break
         
         if not model_id:
-            debug_print(f"❌ Model '{model_public_name}' not found in model list")
+            debug_print(f"❌ 模型列表未找到模型 '{model_public_name}'")
             raise HTTPException(
                 status_code=404, 
-                detail=f"Model '{model_public_name}' not found. Use /api/v1/models to see available models."
+                detail=f"未找到模型 '{model_public_name}'。使用 /api/v1/models 查看可用模型。"
             )
         
-        # Check if model is a stealth model (no organization)
+        # 检查模型是否为隐形模型（无组织）
         if not model_org:
-            debug_print(f"❌ Model '{model_public_name}' is a stealth model (no organization)")
+            debug_print(f"❌ 模型 '{model_public_name}' 是隐形模型（无组织）")
             raise HTTPException(
                 status_code=403,
-                detail="You do not have access to stealth models. Contact cloudwaddie for more info."
+                detail="您无权访问隐形模型。请联系 cloudwaddie 获取更多信息。"
             )
         
-        debug_print(f"✅ Found model ID: {model_id}")
-        debug_print(f"🔧 Model capabilities: {model_capabilities}")
+        debug_print(f"✅ 找到模型 ID: {model_id}")
+        debug_print(f"🔧 模型能力: {model_capabilities}")
         
-        # Determine modality based on model capabilities
-        # Priority: image > search > chat
+        # 根据模型能力确定模态
+        # 优先级: image > search > chat
         if model_capabilities.get('outputCapabilities', {}).get('image'):
             modality = "image"
         elif model_capabilities.get('outputCapabilities', {}).get('search'):
             modality = "search"
         else:
             modality = "chat"
-        debug_print(f"🔍 Model modality: {modality}")
+        debug_print(f"🔍 模型模态: {modality}")
 
-        # Log usage
+        # 记录使用情况
         try:
             model_usage_stats[model_public_name] += 1
-            # Save stats immediately after incrementing
+            # 增加后立即保存统计数据
             config = get_config()
             config["usage_stats"] = dict(model_usage_stats)
             save_config(config)
         except Exception as e:
-            # Don't fail the request if usage logging fails
-            debug_print(f"⚠️  Failed to log usage stats: {e}")
+            # 如果使用情况记录失败，不要使请求失败
+            debug_print(f"⚠️  记录使用统计失败: {e}")
 
-        # Extract system prompt if present and prepend to first user message
+        # 如果存在系统提示，则提取并添加到第一条用户消息之前
         system_prompt = ""
         system_messages = [m for m in messages if m.get("role") == "system"]
         if system_messages:
             system_prompt = "\n\n".join([m.get("content", "") for m in system_messages])
-            debug_print(f"📋 System prompt found: {system_prompt[:100]}..." if len(system_prompt) > 100 else f"📋 System prompt: {system_prompt}")
+            debug_print(f"📋 发现系统提示: {system_prompt[:100]}..." if len(system_prompt) > 100 else f"📋 系统提示: {system_prompt}")
         
-        # Process last message content (may include images)
+        # 处理最后一条消息内容（可能包含图片）
         try:
             last_message_content = messages[-1].get("content", "")
             prompt, experimental_attachments = await process_message_content(last_message_content, model_capabilities)
             
-            # If there's a system prompt and this is the first user message, prepend it
+            # 如果有系统提示且这是第一条用户消息，则将其添加到前面
             if system_prompt:
                 prompt = f"{system_prompt}\n\n{prompt}"
-                debug_print(f"✅ System prompt prepended to user message")
+                debug_print(f"✅ 系统提示已添加到用户消息前")
         except Exception as e:
-            debug_print(f"❌ Failed to process message content: {e}")
+            debug_print(f"❌ 处理消息内容失败: {e}")
             raise HTTPException(
                 status_code=400,
-                detail=f"Failed to process message content: {str(e)}"
+                detail=f"处理消息内容失败: {str(e)}"
             )
         
-        # Validate prompt
+        # 验证提示
         if not prompt:
-            # If no text but has attachments, that's okay for vision models
+            # 如果没有文本但有附件，对于视觉模型是可以的
             if not experimental_attachments:
-                debug_print("❌ Last message has no content")
-                raise HTTPException(status_code=400, detail="Last message must have content.")
+                debug_print("❌ 最后一条消息没有内容")
+                raise HTTPException(status_code=400, detail="最后一条消息必须有内容。")
         
-        # Log prompt length for debugging character limit issues
-        debug_print(f"📝 User prompt length: {len(prompt)} characters")
-        debug_print(f"🖼️  Attachments: {len(experimental_attachments)} images")
-        debug_print(f"📝 User prompt preview: {prompt[:100]}..." if len(prompt) > 100 else f"📝 User prompt: {prompt}")
+        # 记录提示长度以调试字符限制问题
+        debug_print(f"📝 用户提示长度: {len(prompt)} 字符")
+        debug_print(f"🖼️  附件: {len(experimental_attachments)} 张图片")
+        debug_print(f"📝 用户提示预览: {prompt[:100]}..." if len(prompt) > 100 else f"📝 用户提示: {prompt}")
         
-        # Check for reasonable character limit (LMArena appears to have limits)
-        # Typical limit seems to be around 32K-64K characters based on testing
-        MAX_PROMPT_LENGTH = 113567  # User hardcoded limit
+        # 检查合理的字符限制 (LMArena 似乎有限制)
+        # 根据测试，典型限制似乎在 32K-64K 字符左右
+        MAX_PROMPT_LENGTH = 113567  # 用户硬编码限制
         if len(prompt) > MAX_PROMPT_LENGTH:
-            error_msg = f"Prompt too long ({len(prompt)} characters). LMArena has a character limit of approximately {MAX_PROMPT_LENGTH} characters. Please reduce the message size."
+            error_msg = f"提示太长 ({len(prompt)} 字符)。LMArena 的字符限制约为 {MAX_PROMPT_LENGTH} 字符。请减小消息大小。"
             debug_print(f"❌ {error_msg}")
             raise HTTPException(status_code=400, detail=error_msg)
         
-        # Use API key + conversation tracking
+        # 使用 API 密钥 + 对话跟踪
         api_key_str = api_key["key"]
         
-        # Generate conversation ID from context (API key + model + first user message)
+        # 从上下文生成对话 ID (API 密钥 + 模型 + 第一条用户消息)
+        # 这允许自动会话延续而无需客户端修改
         import hashlib
         first_user_message = next((m.get("content", "") for m in messages if m.get("role") == "user"), "")
         if isinstance(first_user_message, list):
-            # Handle array content format
+            # 处理数组内容格式
             first_user_message = str(first_user_message)
         conversation_key = f"{api_key_str}_{model_public_name}_{first_user_message[:100]}"
         conversation_id = hashlib.sha256(conversation_key.encode()).hexdigest()[:16]
         
-        debug_print(f"🔑 API Key: {api_key_str[:20]}...")
-        debug_print(f"💭 Auto-generated Conversation ID: {conversation_id}")
-        debug_print(f"🔑 Conversation key: {conversation_key[:100]}...")
+        debug_print(f"🔑 API 密钥: {api_key_str[:20]}...")
+        debug_print(f"💭 自动生成的对话 ID: {conversation_id}")
+        debug_print(f"🔑 对话密钥: {conversation_key[:100]}...")
         
         headers = get_request_headers()
-        debug_print(f"📋 Headers prepared (auth token length: {len(headers.get('Cookie', '').split('arena-auth-prod-v1=')[-1].split(';')[0])} chars)")
+        debug_print(f"📋 标头已准备 (认证令牌长度: {len(headers.get('Cookie', '').split('arena-auth-prod-v1=')[-1].split(';')[0])} 字符)")
         
-        # Check if conversation exists for this API key
+        # 检查此 API 密钥是否存在对话
         session = chat_sessions[api_key_str].get(conversation_id)
         
-        # Detect retry: if session exists and last message is same user message (no assistant response after it)
+        # 检测重试：如果会话存在且最后一条消息是相同的用户消息（之后没有助手响应）
         is_retry = False
         retry_message_id = None
         
         if session and len(session.get("messages", [])) >= 2:
             stored_messages = session["messages"]
-            # Check if last stored message is from user with same content
+            # 检查最后存储的消息是否来自具有相同内容的用户
             if stored_messages[-1]["role"] == "user" and stored_messages[-1]["content"] == prompt:
-                # This is a retry - client sent same message again without assistant response
+                # 这是一个重试 - 客户端再次发送相同的消息而没有助手响应
                 is_retry = True
                 retry_message_id = stored_messages[-1]["id"]
-                # Get the assistant message ID that needs to be regenerated
+                # 获取需要重新生成的助手消息 ID
                 if len(stored_messages) >= 2 and stored_messages[-2]["role"] == "assistant":
-                    # There was a previous assistant response - we'll retry that one
+                    # 之前有助手响应 - 我们将重试该响应
                     retry_message_id = stored_messages[-2]["id"]
-                    debug_print(f"🔁 RETRY DETECTED - Regenerating assistant message {retry_message_id}")
+                    debug_print(f"🔁 检测到重试 - 正在重新生成助手消息 {retry_message_id}")
         
         if is_retry and retry_message_id:
-            debug_print(f"🔁 Using RETRY endpoint")
-            # Use LMArena's retry endpoint
-            # Format: PUT /nextjs-api/stream/retry-evaluation-session-message/{sessionId}/messages/{messageId}
-            payload = {}
+            debug_print(f"🔁 使用重试端点")
+            # 使用 LMArena 的重试端点
+            # 格式: PUT /nextjs-api/stream/retry-evaluation-session-message/{sessionId}/messages/{messageId}
+            # 注意: 我们不需要重试的有效负载，只需要 recaptchaV3Token (可选)
+            payload = {
+                "recaptchaV3Token": ""  # 可选，可以为空
+            }
             url = f"https://lmarena.ai/nextjs-api/stream/retry-evaluation-session-message/{session['conversation_id']}/messages/{retry_message_id}"
-            debug_print(f"📤 Target URL: {url}")
-            debug_print(f"📦 Using PUT method for retry")
+            debug_print(f"📤 目标 URL: {url}")
+            debug_print(f"📦 使用 PUT 方法重试")
             http_method = "PUT"
         elif not session:
-            debug_print("🆕 Creating NEW conversation session")
-            # New conversation - Generate all IDs at once (like the browser does)
+            debug_print("🆕 创建新对话会话")
+            # 新对话 - 一次生成所有 ID (就像浏览器所做的那样)
             session_id = str(uuid7())
             user_msg_id = str(uuid7())
             model_msg_id = str(uuid7())
             
-            debug_print(f"🔑 Generated session_id: {session_id}")
-            debug_print(f"👤 Generated user_msg_id: {user_msg_id}")
-            debug_print(f"🤖 Generated model_msg_id: {model_msg_id}")
+            debug_print(f"🔑 生成的 session_id: {session_id}")
+            debug_print(f"👤 生成的 user_msg_id: {user_msg_id}")
+            debug_print(f"🤖 生成的 model_msg_id: {model_msg_id}")
             
             payload = {
                 "id": session_id,
@@ -1961,315 +1535,183 @@ async def api_chat_completions(request: Request, api_key: dict = Depends(rate_li
                 "modelAMessageId": model_msg_id,
                 "userMessage": {
                     "content": prompt,
-                    "experimental_attachments": experimental_attachments,
-                    "metadata": {}
+                    "experimental_attachments": experimental_attachments
                 },
                 "modality": modality
             }
             url = "https://lmarena.ai/nextjs-api/stream/create-evaluation"
-            debug_print(f"📤 Target URL: {url}")
-            debug_print(f"📦 Payload structure: Simple userMessage format")
-            debug_print(f"🔍 Full payload: {json.dumps(payload, indent=2)}")
+            debug_print(f"📤 目标 URL: {url}")
+            debug_print(f"📦 有效负载结构: 简单的 userMessage 格式")
+            debug_print(f"🔍 完整有效负载: {json.dumps(payload, indent=2)}")
             http_method = "POST"
         else:
-            debug_print("🔄 Using EXISTING conversation session")
-            # Follow-up message - Generate new message IDs
+            debug_print("🔄 使用现有对话会话")
+            # 后续消息 - 生成新消息 ID
             user_msg_id = str(uuid7())
-            debug_print(f"👤 Generated followup user_msg_id: {user_msg_id}")
+            debug_print(f"👤 生成的后续 user_msg_id: {user_msg_id}")
             model_msg_id = str(uuid7())
-            debug_print(f"🤖 Generated followup model_msg_id: {model_msg_id}")
+            debug_print(f"🤖 生成的后续 model_msg_id: {model_msg_id}")
             
             payload = {
                 "id": session["conversation_id"],
+                "mode": "direct",
                 "modelAId": model_id,
                 "userMessageId": user_msg_id,
                 "modelAMessageId": model_msg_id,
                 "userMessage": {
                     "content": prompt,
-                    "experimental_attachments": experimental_attachments,
-                    "metadata": {}
+                    "experimental_attachments": experimental_attachments
                 },
                 "modality": modality
             }
             url = f"https://lmarena.ai/nextjs-api/stream/post-to-evaluation/{session['conversation_id']}"
-            debug_print(f"📤 Target URL: {url}")
-            debug_print(f"📦 Payload structure: Simple userMessage format")
-            debug_print(f"🔍 Full payload: {json.dumps(payload, indent=2)}")
+            debug_print(f"📤 目标 URL: {url}")
+            debug_print(f"📦 有效负载结构: 简单的 userMessage 格式")
+            debug_print(f"🔍 完整有效负载: {json.dumps(payload, indent=2)}")
             http_method = "POST"
 
-        debug_print(f"\n🚀 Making API request to LMArena...")
-        debug_print(f"⏱️  Timeout set to: 120 seconds")
+        debug_print(f"\n🚀 正在向 LMArena 发送 API 请求...")
+        debug_print(f"⏱️  超时设置为: 120 秒")
         
-        # Initialize failed tokens tracking for this request
-        request_id = str(uuid.uuid4())
-        failed_tokens = set()
-        
-        # Get initial auth token using round-robin (excluding any failed ones)
-        current_token = get_next_auth_token(exclude_tokens=failed_tokens)
-        headers = get_request_headers_with_token(current_token)
-        debug_print(f"🔑 Using token (round-robin): {current_token[:20]}...")
-        
-        # Retry logic wrapper
-        async def make_request_with_retry(url, payload, http_method, max_retries=3):
-            """Make request with automatic retry on 429/401 errors"""
-            nonlocal current_token, headers, failed_tokens
-            
-            for attempt in range(max_retries):
-                try:
-                    async with httpx.AsyncClient() as client:
-                        if http_method == "PUT":
-                            response = await client.put(url, json=payload, headers=headers, timeout=120)
-                        else:
-                            response = await client.post(url, json=payload, headers=headers, timeout=120)
-                        
-                        # Log status with human-readable message
-                        log_http_status(response.status_code, "LMArena API")
-                        
-                        # Check for retry-able errors
-                        if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
-                            debug_print(f"⏱️  Attempt {attempt + 1}/{max_retries} - Rate limit with token {current_token[:20]}...")
-                            # Add current token to failed set
-                            failed_tokens.add(current_token)
-                            debug_print(f"📝 Failed tokens so far: {len(failed_tokens)}")
-                            
-                            if attempt < max_retries - 1:
-                                try:
-                                    # Try with next token (excluding failed ones)
-                                    current_token = get_next_auth_token(exclude_tokens=failed_tokens)
-                                    headers = get_request_headers_with_token(current_token)
-                                    debug_print(f"🔄 Retrying with next token: {current_token[:20]}...")
-                                    await asyncio.sleep(1)  # Brief delay
-                                    continue
-                                except HTTPException as e:
-                                    debug_print(f"❌ No more tokens available: {e.detail}")
-                                    break
-                        
-                        elif response.status_code == HTTPStatus.UNAUTHORIZED:
-                            debug_print(f"🔒 Attempt {attempt + 1}/{max_retries} - Auth failed with token {current_token[:20]}...")
-                            # Add current token to failed set
-                            failed_tokens.add(current_token)
-                            # Remove the expired token from config
-                            remove_auth_token(current_token)
-                            debug_print(f"📝 Failed tokens so far: {len(failed_tokens)}")
-                            
-                            if attempt < max_retries - 1:
-                                try:
-                                    # Try with next available token (excluding failed ones)
-                                    current_token = get_next_auth_token(exclude_tokens=failed_tokens)
-                                    headers = get_request_headers_with_token(current_token)
-                                    debug_print(f"🔄 Retrying with next token: {current_token[:20]}...")
-                                    await asyncio.sleep(1)  # Brief delay
-                                    continue
-                                except HTTPException as e:
-                                    debug_print(f"❌ No more tokens available: {e.detail}")
-                                    break
-                        
-                        # If we get here, return the response (success or non-retryable error)
-                        response.raise_for_status()
-                        return response
-                        
-                except httpx.HTTPStatusError as e:
-                    # Only handle 429 and 401, let other errors through
-                    if e.response.status_code not in [429, 401]:
-                        raise
-                    # If last attempt, raise the error
-                    if attempt == max_retries - 1:
-                        raise
-            
-            # Should not reach here, but just in case
-            raise HTTPException(status_code=503, detail="Max retries exceeded")
-        
-        # Handle streaming mode
+        # 处理流式传输模式
         if stream:
             async def generate_stream():
-                nonlocal current_token, headers
+                response_text = ""
+                reasoning_text = ""
+                citations = []
                 chunk_id = f"chatcmpl-{uuid.uuid4()}"
                 
-                # Retry logic for streaming
-                max_retries = 3
-                for attempt in range(max_retries):
-                    # Reset response data for each attempt
-                    response_text = ""
-                    reasoning_text = ""
-                    citations = []
+                async with httpx.AsyncClient() as client:
                     try:
-                        async with httpx.AsyncClient() as client:
-                            debug_print(f"📡 Sending {http_method} request for streaming (attempt {attempt + 1}/{max_retries})...")
+                        debug_print("📡 正在发送流式 POST 请求...")
+                        async with client.stream('POST', url, json=payload, headers=headers, timeout=120) as response:
+                            debug_print(f"✅ 流已打开 - 状态: {response.status_code}")
+                            response.raise_for_status()
                             
-                            if http_method == "PUT":
-                                stream_context = client.stream('PUT', url, json=payload, headers=headers, timeout=120)
-                            else:
-                                stream_context = client.stream('POST', url, json=payload, headers=headers, timeout=120)
-                            
-                            async with stream_context as response:
-                                # Log status with human-readable message
-                                log_http_status(response.status_code, "LMArena API Stream")
+                            async for line in response.aiter_lines():
+                                line = line.strip()
+                                if not line:
+                                    continue
                                 
-                                # Check for retry-able errors before processing stream
-                                if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
-                                    debug_print(f"⏱️  Stream attempt {attempt + 1}/{max_retries}")
-                                    if attempt < max_retries - 1:
-                                        current_token = get_next_auth_token()
-                                        headers = get_request_headers_with_token(current_token)
-                                        debug_print(f"🔄 Retrying stream with next token: {current_token[:20]}...")
-                                        await asyncio.sleep(1)
+                                # Parse thinking/reasoning chunks: ag:"thinking text"
+                                if line.startswith("ag:"):
+                                    chunk_data = line[3:]
+                                    try:
+                                        reasoning_chunk = json.loads(chunk_data)
+                                        reasoning_text += reasoning_chunk
+                                        
+                                        # Send SSE-formatted chunk with reasoning_content
+                                        chunk_response = {
+                                            "id": chunk_id,
+                                            "object": "chat.completion.chunk",
+                                            "created": int(time.time()),
+                                            "model": model_public_name,
+                                            "choices": [{
+                                                "index": 0,
+                                                "delta": {
+                                                    "reasoning_content": reasoning_chunk
+                                                },
+                                                "finish_reason": None
+                                            }]
+                                        }
+                                        yield f"data: {json.dumps(chunk_response)}\n\n"
+                                        
+                                    except json.JSONDecodeError:
                                         continue
                                 
-                                elif response.status_code == HTTPStatus.UNAUTHORIZED:
-                                    debug_print(f"🔒 Stream token expired")
-                                    remove_auth_token(current_token)
-                                    if attempt < max_retries - 1:
-                                        try:
-                                            current_token = get_next_auth_token()
-                                            headers = get_request_headers_with_token(current_token)
-                                            debug_print(f"🔄 Retrying stream with next token: {current_token[:20]}...")
-                                            await asyncio.sleep(1)
-                                            continue
-                                        except HTTPException:
-                                            debug_print(f"❌ No more tokens available")
-                                            break
-                                
-                                log_http_status(response.status_code, "Stream Connection")
-                                response.raise_for_status()
-                                
-                                async for line in response.aiter_lines():
-                                    line = line.strip()
-                                    if not line:
+                                # Parse text chunks: a0:"Hello "
+                                elif line.startswith("a0:"):
+                                    chunk_data = line[3:]
+                                    try:
+                                        text_chunk = json.loads(chunk_data)
+                                        response_text += text_chunk
+                                        
+                                        # Send SSE-formatted chunk
+                                        chunk_response = {
+                                            "id": chunk_id,
+                                            "object": "chat.completion.chunk",
+                                            "created": int(time.time()),
+                                            "model": model_public_name,
+                                            "choices": [{
+                                                "index": 0,
+                                                "delta": {
+                                                    "content": text_chunk
+                                                },
+                                                "finish_reason": None
+                                            }]
+                                        }
+                                        yield f"data: {json.dumps(chunk_response)}\n\n"
+                                        
+                                    except json.JSONDecodeError:
                                         continue
-                                    
-                                    # Parse thinking/reasoning chunks: ag:"thinking text"
-                                    if line.startswith("ag:"):
-                                        chunk_data = line[3:]
-                                        try:
-                                            reasoning_chunk = json.loads(chunk_data)
-                                            reasoning_text += reasoning_chunk
-                                            
-                                            # Send SSE-formatted chunk with reasoning_content
-                                            chunk_response = {
-                                                "id": chunk_id,
-                                                "object": "chat.completion.chunk",
-                                                "created": int(time.time()),
-                                                "model": model_public_name,
-                                                "choices": [{
-                                                    "index": 0,
-                                                    "delta": {
-                                                        "reasoning_content": reasoning_chunk
-                                                    },
-                                                    "finish_reason": None
-                                                }]
-                                            }
-                                            yield f"data: {json.dumps(chunk_response)}\n\n"
-                                            
-                                        except json.JSONDecodeError:
-                                            continue
-                                    
-                                    # Parse text chunks: a0:"Hello "
-                                    elif line.startswith("a0:"):
-                                        chunk_data = line[3:]
-                                        try:
-                                            text_chunk = json.loads(chunk_data)
-                                            response_text += text_chunk
-                                            
-                                            # Send SSE-formatted chunk
-                                            chunk_response = {
-                                                "id": chunk_id,
-                                                "object": "chat.completion.chunk",
-                                                "created": int(time.time()),
-                                                "model": model_public_name,
-                                                "choices": [{
-                                                    "index": 0,
-                                                    "delta": {
-                                                        "content": text_chunk
-                                                    },
-                                                    "finish_reason": None
-                                                }]
-                                            }
-                                            yield f"data: {json.dumps(chunk_response)}\n\n"
-                                            
-                                        except json.JSONDecodeError:
-                                            continue
-                                    
-                                    # Parse image generation: a2:[{...}] (for image models)
-                                    elif line.startswith("a2:"):
-                                        image_data = line[3:]
-                                        try:
-                                            image_list = json.loads(image_data)
-                                            # OpenAI format: return URL in content
-                                            if isinstance(image_list, list) and len(image_list) > 0:
-                                                image_obj = image_list[0]
-                                                if image_obj.get('type') == 'image':
-                                                    image_url = image_obj.get('image', '')
-                                                    # Format as markdown for streaming
-                                                    response_text = f"![Generated Image]({image_url})"
-                                                    
-                                                    # Send the markdown-formatted image in a chunk
-                                                    chunk_response = {
-                                                        "id": chunk_id,
-                                                        "object": "chat.completion.chunk",
-                                                        "created": int(time.time()),
-                                                        "model": model_public_name,
-                                                        "choices": [{
-                                                            "index": 0,
-                                                            "delta": {
-                                                                "content": response_text
-                                                            },
-                                                            "finish_reason": None
-                                                        }]
-                                                    }
-                                                    yield f"data: {json.dumps(chunk_response)}\n\n"
-                                        except json.JSONDecodeError:
-                                            pass
-                                    
-                                    # Parse citations/tool calls: ac:{...} (for search models)
-                                    elif line.startswith("ac:"):
-                                        citation_data = line[3:]
-                                        try:
-                                            citation_obj = json.loads(citation_data)
-                                            # Extract source information from argsTextDelta
-                                            if 'argsTextDelta' in citation_obj:
-                                                args_data = json.loads(citation_obj['argsTextDelta'])
-                                                if 'source' in args_data:
-                                                    source = args_data['source']
-                                                    # Can be a single source or array of sources
-                                                    if isinstance(source, list):
-                                                        citations.extend(source)
-                                                    elif isinstance(source, dict):
-                                                        citations.append(source)
-                                            debug_print(f"  🔗 Citation added: {citation_obj.get('toolCallId')}")
-                                        except json.JSONDecodeError:
-                                            pass
-                                    
-                                    # Parse error messages
-                                    elif line.startswith("a3:"):
-                                        error_data = line[3:]
-                                        try:
-                                            error_message = json.loads(error_data)
-                                            print(f"  ❌ Error in stream: {error_message}")
-                                        except json.JSONDecodeError:
-                                            pass
-                                    
-                                    # Parse metadata for finish
-                                    elif line.startswith("ad:"):
-                                        metadata_data = line[3:]
-                                        try:
-                                            metadata = json.loads(metadata_data)
-                                            finish_reason = metadata.get("finishReason", "stop")
-                                            
-                                            # Send final chunk with finish_reason
-                                            final_chunk = {
-                                                "id": chunk_id,
-                                                "object": "chat.completion.chunk",
-                                                "created": int(time.time()),
-                                                "model": model_public_name,
-                                                "choices": [{
-                                                    "index": 0,
-                                                    "delta": {},
-                                                    "finish_reason": finish_reason
-                                                }]
-                                            }
-                                            yield f"data: {json.dumps(final_chunk)}\n\n"
-                                        except json.JSONDecodeError:
-                                            continue
+                                
+                                # Parse image generation: a2:[{...}] (for image models)
+                                elif line.startswith("a2:"):
+                                    image_data = line[3:]
+                                    try:
+                                        image_list = json.loads(image_data)
+                                        # OpenAI format: return URL in content
+                                        if isinstance(image_list, list) and len(image_list) > 0:
+                                            image_obj = image_list[0]
+                                            if image_obj.get('type') == 'image':
+                                                image_url = image_obj.get('image', '')
+                                                # Store image URL as response text for now
+                                                # Will format properly in final response
+                                                response_text = image_url
+                                                debug_print(f"  🖼️  收到图片 URL: {image_url[:100]}...")
+                                    except json.JSONDecodeError:
+                                        pass
+                                
+                                # Parse citations/tool calls: ac:{...} (for search models)
+                                elif line.startswith("ac:"):
+                                    citation_data = line[3:]
+                                    try:
+                                        citation_obj = json.loads(citation_data)
+                                        # Extract source information from argsTextDelta
+                                        if 'argsTextDelta' in citation_obj:
+                                            args_data = json.loads(citation_obj['argsTextDelta'])
+                                            if 'source' in args_data:
+                                                source = args_data['source']
+                                                # Can be a single source or array of sources
+                                                if isinstance(source, list):
+                                                    citations.extend(source)
+                                                elif isinstance(source, dict):
+                                                    citations.append(source)
+                                        debug_print(f"  🔗 已添加引用: {citation_obj.get('toolCallId')}")
+                                    except json.JSONDecodeError:
+                                        pass
+                                
+                                # Parse error messages
+                                elif line.startswith("a3:"):
+                                    error_data = line[3:]
+                                    try:
+                                        error_message = json.loads(error_data)
+                                        print(f"  ❌ 流中出错: {error_message}")
+                                    except json.JSONDecodeError:
+                                        pass
+                                
+                                # Parse metadata for finish
+                                elif line.startswith("ad:"):
+                                    metadata_data = line[3:]
+                                    try:
+                                        metadata = json.loads(metadata_data)
+                                        finish_reason = metadata.get("finishReason", "stop")
+                                        
+                                        # Send final chunk with finish_reason
+                                        final_chunk = {
+                                            "id": chunk_id,
+                                            "object": "chat.completion.chunk",
+                                            "created": int(time.time()),
+                                            "model": model_public_name,
+                                            "choices": [{
+                                                "index": 0,
+                                                "delta": {},
+                                                "finish_reason": finish_reason
+                                            }]
+                                        }
+                                        yield f"data: {json.dumps(final_chunk)}\n\n"
+                                    except json.JSONDecodeError:
+                                        continue
                             
                             # Update session - Store message history with IDs (including reasoning and citations if present)
                             assistant_message = {
@@ -2299,7 +1741,7 @@ async def api_chat_completions(request: Request, api_key: dict = Depends(rate_li
                                         assistant_message
                                     ]
                                 }
-                                debug_print(f"💾 Saved new session for conversation {conversation_id}")
+                                debug_print(f"💾 已保存对话 {conversation_id} 的新会话")
                             else:
                                 # Append new messages to history
                                 chat_sessions[api_key_str][conversation_id]["messages"].append(
@@ -2308,25 +1750,21 @@ async def api_chat_completions(request: Request, api_key: dict = Depends(rate_li
                                 chat_sessions[api_key_str][conversation_id]["messages"].append(
                                     assistant_message
                                 )
-                                debug_print(f"💾 Updated existing session for conversation {conversation_id}")
+                                debug_print(f"💾 已更新对话 {conversation_id} 的现有会话")
                             
                             yield "data: [DONE]\n\n"
-                            debug_print(f"✅ Stream completed - {len(response_text)} chars sent")
-                            return  # Success, exit retry loop
-                                
+                            debug_print(f"✅ 流已完成 - 已发送 {len(response_text)} 字符")
+                            
                     except httpx.HTTPStatusError as e:
-                        # Handle retry-able errors
-                        if e.response.status_code in [429, 401] and attempt < max_retries - 1:
-                            continue  # Retry loop will handle it
                         # Provide user-friendly error messages
                         if e.response.status_code == 429:
-                            error_msg = "Rate limit exceeded on LMArena. Please try again in a few moments."
+                            error_msg = "LMArena 超出速率限制。请稍后再试。"
                             error_type = "rate_limit_error"
                         elif e.response.status_code == 401:
-                            error_msg = "Unauthorized: Your LMArena auth token has expired or is invalid. Please get a new auth token from the dashboard."
+                            error_msg = "未授权: 您的 LMArena 认证令牌已过期或无效。请从仪表板获取新的认证令牌。"
                             error_type = "authentication_error"
                         else:
-                            error_msg = f"LMArena API error: {e.response.status_code}"
+                            error_msg = f"LMArena API 错误: {e.response.status_code}"
                             error_type = "api_error"
                         
                         print(f"❌ {error_msg}")
@@ -2338,9 +1776,8 @@ async def api_chat_completions(request: Request, api_key: dict = Depends(rate_li
                             }
                         }
                         yield f"data: {json.dumps(error_chunk)}\n\n"
-                        return
                     except Exception as e:
-                        print(f"❌ Stream error: {str(e)}")
+                        print(f"❌ 流错误: {str(e)}")
                         error_chunk = {
                             "error": {
                                 "message": str(e),
@@ -2348,385 +1785,347 @@ async def api_chat_completions(request: Request, api_key: dict = Depends(rate_li
                             }
                         }
                         yield f"data: {json.dumps(error_chunk)}\n\n"
-                        return
             
             return StreamingResponse(generate_stream(), media_type="text/event-stream")
         
-        # Handle non-streaming mode with retry
-        try:
-            response = await make_request_with_retry(url, payload, http_method)
-            
-            log_http_status(response.status_code, "LMArena API Response")
-            debug_print(f"📏 Response length: {len(response.text)} characters")
-            debug_print(f"📋 Response headers: {dict(response.headers)}")
-            
-            debug_print(f"🔍 Processing response...")
-            debug_print(f"📄 First 500 chars of response:\n{response.text[:500]}")
-            
-            # Process response in lmarena format
-            # Format: ag:"thinking" for reasoning, a0:"text chunk" for content, ac:{...} for citations, ad:{...} for metadata
-            response_text = ""
-            reasoning_text = ""
-            citations = []
-            finish_reason = None
-            line_count = 0
-            text_chunks_found = 0
-            reasoning_chunks_found = 0
-            citation_chunks_found = 0
-            metadata_found = 0
-            
-            debug_print(f"📊 Parsing response lines...")
-            
-            error_message = None
-            for line in response.text.splitlines():
-                line_count += 1
-                line = line.strip()
-                if not line:
-                    continue
-                
-                # Parse thinking/reasoning chunks: ag:"thinking text"
-                if line.startswith("ag:"):
-                    chunk_data = line[3:]  # Remove "ag:" prefix
-                    reasoning_chunks_found += 1
-                    try:
-                        # Parse as JSON string (includes quotes)
-                        reasoning_chunk = json.loads(chunk_data)
-                        reasoning_text += reasoning_chunk
-                        if reasoning_chunks_found <= 3:  # Log first 3 reasoning chunks
-                            debug_print(f"  🧠 Reasoning chunk {reasoning_chunks_found}: {repr(reasoning_chunk[:50])}")
-                    except json.JSONDecodeError as e:
-                        debug_print(f"  ⚠️ Failed to parse reasoning chunk on line {line_count}: {chunk_data[:100]} - {e}")
-                        continue
-                
-                # Parse text chunks: a0:"Hello "
-                elif line.startswith("a0:"):
-                    chunk_data = line[3:]  # Remove "a0:" prefix
-                    text_chunks_found += 1
-                    try:
-                        # Parse as JSON string (includes quotes)
-                        text_chunk = json.loads(chunk_data)
-                        response_text += text_chunk
-                        if text_chunks_found <= 3:  # Log first 3 chunks
-                            debug_print(f"  ✅ Chunk {text_chunks_found}: {repr(text_chunk[:50])}")
-                    except json.JSONDecodeError as e:
-                        debug_print(f"  ⚠️ Failed to parse text chunk on line {line_count}: {chunk_data[:100]} - {e}")
-                        continue
-                
-                # Parse image generation: a2:[{...}] (for image models)
-                elif line.startswith("a2:"):
-                    image_data = line[3:]  # Remove "a2:" prefix
-                    try:
-                        image_list = json.loads(image_data)
-                        # OpenAI format expects URL in content
-                        if isinstance(image_list, list) and len(image_list) > 0:
-                            image_obj = image_list[0]
-                            if image_obj.get('type') == 'image':
-                                image_url = image_obj.get('image', '')
-                                # Format as markdown
-                                response_text = f"![Generated Image]({image_url})"
-                    except json.JSONDecodeError as e:
-                        debug_print(f"  ⚠️ Failed to parse image data on line {line_count}: {image_data[:100]} - {e}")
-                        continue
-                
-                # Parse citations/tool calls: ac:{...} (for search models)
-                elif line.startswith("ac:"):
-                    citation_data = line[3:]  # Remove "ac:" prefix
-                    citation_chunks_found += 1
-                    try:
-                        citation_obj = json.loads(citation_data)
-                        # Extract source information from argsTextDelta
-                        if 'argsTextDelta' in citation_obj:
-                            args_data = json.loads(citation_obj['argsTextDelta'])
-                            if 'source' in args_data:
-                                source = args_data['source']
-                                # Can be a single source or array of sources
-                                if isinstance(source, list):
-                                    citations.extend(source)
-                                elif isinstance(source, dict):
-                                    citations.append(source)
-                        if citation_chunks_found <= 3:  # Log first 3 citations
-                            debug_print(f"  🔗 Citation chunk {citation_chunks_found}: {citation_obj.get('toolCallId')}")
-                    except json.JSONDecodeError as e:
-                        debug_print(f"  ⚠️ Failed to parse citation chunk on line {line_count}: {citation_data[:100]} - {e}")
-                        continue
-                
-                # Parse error messages: a3:"An error occurred"
-                elif line.startswith("a3:"):
-                    error_data = line[3:]  # Remove "a3:" prefix
-                    try:
-                        error_message = json.loads(error_data)
-                        debug_print(f"  ❌ Error message received: {error_message}")
-                    except json.JSONDecodeError as e:
-                        debug_print(f"  ⚠️ Failed to parse error message on line {line_count}: {error_data[:100]} - {e}")
-                        error_message = error_data
-                
-                # Parse metadata: ad:{"finishReason":"stop"}
-                elif line.startswith("ad:"):
-                    metadata_data = line[3:]  # Remove "ad:" prefix
-                    metadata_found += 1
-                    try:
-                        metadata = json.loads(metadata_data)
-                        finish_reason = metadata.get("finishReason")
-                        debug_print(f"  📋 Metadata found: finishReason={finish_reason}")
-                    except json.JSONDecodeError as e:
-                        debug_print(f"  ⚠️ Failed to parse metadata on line {line_count}: {metadata_data[:100]} - {e}")
-                        continue
-                elif line.strip():  # Non-empty line that doesn't match expected format
-                    if line_count <= 5:  # Log first 5 unexpected lines
-                        debug_print(f"  ❓ Unexpected line format {line_count}: {line[:100]}")
-
-            debug_print(f"\n📊 Parsing Summary:")
-            debug_print(f"  - Total lines: {line_count}")
-            debug_print(f"  - Reasoning chunks found: {reasoning_chunks_found}")
-            debug_print(f"  - Text chunks found: {text_chunks_found}")
-            debug_print(f"  - Citation chunks found: {citation_chunks_found}")
-            debug_print(f"  - Metadata entries: {metadata_found}")
-            debug_print(f"  - Final response length: {len(response_text)} chars")
-            debug_print(f"  - Final reasoning length: {len(reasoning_text)} chars")
-            debug_print(f"  - Citations found: {len(citations)}")
-            debug_print(f"  - Finish reason: {finish_reason}")
-            
-            if not response_text:
-                debug_print(f"\n⚠️  WARNING: Empty response text!")
-                debug_print(f"📄 Full raw response:\n{response.text}")
-                if error_message:
-                    error_detail = f"LMArena API error: {error_message}"
-                    print(f"❌ {error_detail}")
-                    # Return OpenAI-compatible error response
-                    return {
-                        "error": {
-                            "message": error_detail,
-                            "type": "upstream_error",
-                            "code": "lmarena_error"
-                        }
-                    }
-                else:
-                    error_detail = "LMArena API returned empty response. This could be due to: invalid auth token, expired cf_clearance, model unavailable, or API rate limiting."
-                    debug_print(f"❌ {error_detail}")
-                    # Return OpenAI-compatible error response
-                    return {
-                        "error": {
-                            "message": error_detail,
-                            "type": "upstream_error",
-                            "code": "empty_response"
-                        }
-                    }
-            else:
-                debug_print(f"✅ Response text preview: {response_text[:200]}...")
-            
-            # Update session - Store message history with IDs (including reasoning and citations if present)
-            assistant_message = {
-                "id": model_msg_id, 
-                "role": "assistant", 
-                "content": response_text.strip()
-            }
-            if reasoning_text:
-                assistant_message["reasoning_content"] = reasoning_text.strip()
-            if citations:
-                # Deduplicate citations by URL
-                unique_citations = []
-                seen_urls = set()
-                for citation in citations:
-                    citation_url = citation.get('url')
-                    if citation_url and citation_url not in seen_urls:
-                        seen_urls.add(citation_url)
-                        unique_citations.append(citation)
-                assistant_message["citations"] = unique_citations
-            
-            if not session:
-                chat_sessions[api_key_str][conversation_id] = {
-                    "conversation_id": session_id,
-                    "model": model_public_name,
-                    "messages": [
-                        {"id": user_msg_id, "role": "user", "content": prompt},
-                        assistant_message
-                    ]
-                }
-                debug_print(f"💾 Saved new session for conversation {conversation_id}")
-            else:
-                # Append new messages to history
-                chat_sessions[api_key_str][conversation_id]["messages"].append(
-                    {"id": user_msg_id, "role": "user", "content": prompt}
-                )
-                chat_sessions[api_key_str][conversation_id]["messages"].append(
-                    assistant_message
-                )
-                debug_print(f"💾 Updated existing session for conversation {conversation_id}")
-
-            # Build message object with reasoning and citations if present
-            message_obj = {
-                "role": "assistant",
-                "content": response_text.strip(),
-            }
-            if reasoning_text:
-                message_obj["reasoning_content"] = reasoning_text.strip()
-            if citations:
-                # Deduplicate citations by URL
-                unique_citations = []
-                seen_urls = set()
-                for citation in citations:
-                    citation_url = citation.get('url')
-                    if citation_url and citation_url not in seen_urls:
-                        seen_urls.add(citation_url)
-                        unique_citations.append(citation)
-                message_obj["citations"] = unique_citations
-                
-                # Add citations as markdown footnotes
-                if unique_citations:
-                    footnotes = "\n\n---\n\n**Sources:**\n\n"
-                    for i, citation in enumerate(unique_citations, 1):
-                        title = citation.get('title', 'Untitled')
-                        url = citation.get('url', '')
-                        footnotes += f"{i}. [{title}]({url})\n"
-                    message_obj["content"] = response_text.strip() + footnotes
-            
-            # Image models already have markdown formatting from parsing
-            # No additional conversion needed
-            
-            # Calculate token counts (including reasoning tokens)
-            prompt_tokens = len(prompt)
-            completion_tokens = len(response_text)
-            reasoning_tokens = len(reasoning_text)
-            total_tokens = prompt_tokens + completion_tokens + reasoning_tokens
-            
-            # Build usage object with reasoning tokens if present
-            usage_obj = {
-                "prompt_tokens": prompt_tokens,
-                "completion_tokens": completion_tokens,
-                "total_tokens": total_tokens
-            }
-            if reasoning_tokens > 0:
-                usage_obj["reasoning_tokens"] = reasoning_tokens
-            
-            final_response = {
-                "id": f"chatcmpl-{uuid.uuid4()}",
-                "object": "chat.completion",
-                "created": int(time.time()),
-                "model": model_public_name,
-                "conversation_id": conversation_id,
-                "choices": [{
-                    "index": 0,
-                    "message": message_obj,
-                    "finish_reason": "stop"
-                }],
-                "usage": usage_obj
-            }
-            
-            debug_print(f"\n✅ REQUEST COMPLETED SUCCESSFULLY")
-            debug_print("="*80 + "\n")
-            
-            return final_response
-
-        except httpx.HTTPStatusError as e:
-            # Log error status
-            log_http_status(e.response.status_code, "Error Response")
-            
-            # Try to parse JSON error response from LMArena
-            lmarena_error = None
+        # Handle non-streaming mode
+        async with httpx.AsyncClient() as client:
             try:
-                error_body = e.response.json()
-                if isinstance(error_body, dict) and "error" in error_body:
-                    lmarena_error = error_body["error"]
-                    debug_print(f"📛 LMArena error message: {lmarena_error}")
-            except:
-                pass
-            
-            # Provide user-friendly error messages
-            if e.response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
-                error_detail = "Rate limit exceeded on LMArena. Please try again in a few moments."
-                error_type = "rate_limit_error"
-            elif e.response.status_code == HTTPStatus.UNAUTHORIZED:
-                error_detail = "Unauthorized: Your LMArena auth token has expired or is invalid. Please get a new auth token from the dashboard."
-                error_type = "authentication_error"
-            elif e.response.status_code == HTTPStatus.FORBIDDEN:
-                error_detail = "Forbidden: Access to this resource is denied."
-                error_type = "forbidden_error"
-            elif e.response.status_code == HTTPStatus.NOT_FOUND:
-                error_detail = "Not Found: The requested resource doesn't exist."
-                error_type = "not_found_error"
-            elif e.response.status_code == HTTPStatus.BAD_REQUEST:
-                # Use LMArena's error message if available
-                if lmarena_error:
-                    error_detail = f"Bad Request: {lmarena_error}"
+                debug_print(f"📡 正在发送 {http_method} 请求...")
+                if http_method == "PUT":
+                    response = await client.put(url, json=payload, headers=headers, timeout=120)
                 else:
-                    error_detail = "Bad Request: Invalid request parameters."
-                error_type = "bad_request_error"
-            elif e.response.status_code >= 500:
-                error_detail = f"Server Error: LMArena API returned {e.response.status_code}"
-                error_type = "server_error"
-            else:
-                # Use LMArena's error message if available
-                if lmarena_error:
-                    error_detail = f"LMArena API error: {lmarena_error}"
+                    response = await client.post(url, json=payload, headers=headers, timeout=120)
+                
+                debug_print(f"✅ 收到响应 - 状态: {response.status_code}")
+                debug_print(f"📏 响应长度: {len(response.text)} 字符")
+                debug_print(f"📋 响应标头: {dict(response.headers)}")
+                
+                response.raise_for_status()
+                
+                debug_print(f"🔍 正在处理响应...")
+                debug_print(f"📄 响应的前 500 个字符:\n{response.text[:500]}")
+                
+                # Process response in lmarena format
+                # Format: ag:"thinking" for reasoning, a0:"text chunk" for content, ac:{...} for citations, ad:{...} for metadata
+                response_text = ""
+                reasoning_text = ""
+                citations = []
+                finish_reason = None
+                line_count = 0
+                text_chunks_found = 0
+                reasoning_chunks_found = 0
+                citation_chunks_found = 0
+                metadata_found = 0
+                
+                debug_print(f"📊 正在解析响应行...")
+                
+                error_message = None
+                for line in response.text.splitlines():
+                    line_count += 1
+                    line = line.strip()
+                    if not line:
+                        continue
+                    
+                    # Parse thinking/reasoning chunks: ag:"thinking text"
+                    if line.startswith("ag:"):
+                        chunk_data = line[3:]  # Remove "ag:" prefix
+                        reasoning_chunks_found += 1
+                        try:
+                            # Parse as JSON string (includes quotes)
+                            reasoning_chunk = json.loads(chunk_data)
+                            reasoning_text += reasoning_chunk
+                            if reasoning_chunks_found <= 3:  # Log first 3 reasoning chunks
+                                debug_print(f"  🧠 推理块 {reasoning_chunks_found}: {repr(reasoning_chunk[:50])}")
+                        except json.JSONDecodeError as e:
+                            debug_print(f"  ⚠️ 解析第 {line_count} 行的推理块失败: {chunk_data[:100]} - {e}")
+                            continue
+                    
+                    # Parse text chunks: a0:"Hello "
+                    elif line.startswith("a0:"):
+                        chunk_data = line[3:]  # Remove "a0:" prefix
+                        text_chunks_found += 1
+                        try:
+                            # Parse as JSON string (includes quotes)
+                            text_chunk = json.loads(chunk_data)
+                            response_text += text_chunk
+                            if text_chunks_found <= 3:  # Log first 3 chunks
+                                debug_print(f"  ✅ 块 {text_chunks_found}: {repr(text_chunk[:50])}")
+                        except json.JSONDecodeError as e:
+                            debug_print(f"  ⚠️ 解析第 {line_count} 行的文本块失败: {chunk_data[:100]} - {e}")
+                            continue
+                    
+                    # Parse image generation: a2:[{...}] (for image models)
+                    elif line.startswith("a2:"):
+                        image_data = line[3:]  # Remove "a2:" prefix
+                        try:
+                            image_list = json.loads(image_data)
+                            # OpenAI format expects URL in content
+                            if isinstance(image_list, list) and len(image_list) > 0:
+                                image_obj = image_list[0]
+                                if image_obj.get('type') == 'image':
+                                    image_url = image_obj.get('image', '')
+                                    # For image models, the URL IS the response
+                                    response_text = image_url
+                                    debug_print(f"  🖼️  图片 URL: {image_url[:100]}...")
+                        except json.JSONDecodeError as e:
+                            debug_print(f"  ⚠️ 解析第 {line_count} 行的图片数据失败: {image_data[:100]} - {e}")
+                            continue
+                    
+                    # Parse citations/tool calls: ac:{...} (for search models)
+                    elif line.startswith("ac:"):
+                        citation_data = line[3:]  # Remove "ac:" prefix
+                        citation_chunks_found += 1
+                        try:
+                            citation_obj = json.loads(citation_data)
+                            # Extract source information from argsTextDelta
+                            if 'argsTextDelta' in citation_obj:
+                                args_data = json.loads(citation_obj['argsTextDelta'])
+                                if 'source' in args_data:
+                                    source = args_data['source']
+                                    # Can be a single source or array of sources
+                                    if isinstance(source, list):
+                                        citations.extend(source)
+                                    elif isinstance(source, dict):
+                                        citations.append(source)
+                            if citation_chunks_found <= 3:  # Log first 3 citations
+                                debug_print(f"  🔗 引用块 {citation_chunks_found}: {citation_obj.get('toolCallId')}")
+                        except json.JSONDecodeError as e:
+                            debug_print(f"  ⚠️ 解析第 {line_count} 行的引用块失败: {citation_data[:100]} - {e}")
+                            continue
+                    
+                    # Parse error messages: a3:"An error occurred"
+                    elif line.startswith("a3:"):
+                        error_data = line[3:]  # Remove "a3:" prefix
+                        try:
+                            error_message = json.loads(error_data)
+                            debug_print(f"  ❌ 收到错误消息: {error_message}")
+                        except json.JSONDecodeError as e:
+                            debug_print(f"  ⚠️ 解析第 {line_count} 行的错误消息失败: {error_data[:100]} - {e}")
+                            error_message = error_data
+                    
+                    # Parse metadata: ad:{"finishReason":"stop"}
+                    elif line.startswith("ad:"):
+                        metadata_data = line[3:]  # Remove "ad:" prefix
+                        metadata_found += 1
+                        try:
+                            metadata = json.loads(metadata_data)
+                            finish_reason = metadata.get("finishReason")
+                            debug_print(f"  📋 发现元数据: finishReason={finish_reason}")
+                        except json.JSONDecodeError as e:
+                            debug_print(f"  ⚠️ 解析第 {line_count} 行的元数据失败: {metadata_data[:100]} - {e}")
+                            continue
+                    elif line.strip():  # Non-empty line that doesn't match expected format
+                        if line_count <= 5:  # Log first 5 unexpected lines
+                            debug_print(f"  ❓ 意外的行格式 {line_count}: {line[:100]}")
+
+                debug_print(f"\n📊 解析摘要:")
+                debug_print(f"  - 总行数: {line_count}")
+                debug_print(f"  - 发现推理块: {reasoning_chunks_found}")
+                debug_print(f"  - 发现文本块: {text_chunks_found}")
+                debug_print(f"  - 发现引用块: {citation_chunks_found}")
+                debug_print(f"  - 元数据条目: {metadata_found}")
+                debug_print(f"  - 最终响应长度: {len(response_text)} 字符")
+                debug_print(f"  - 最终推理长度: {len(reasoning_text)} 字符")
+                debug_print(f"  - 发现引用: {len(citations)}")
+                debug_print(f"  - 完成原因: {finish_reason}")
+                
+                if not response_text:
+                    debug_print(f"\n⚠️  警告: 响应文本为空!")
+                    debug_print(f"📄 完整原始响应:\n{response.text}")
+                    if error_message:
+                        error_detail = f"LMArena API 错误: {error_message}"
+                        print(f"❌ {error_detail}")
+                        # Return OpenAI-compatible error response
+                        return {
+                            "error": {
+                                "message": error_detail,
+                                "type": "upstream_error",
+                                "code": "lmarena_error"
+                            }
+                        }
+                    else:
+                        error_detail = "LMArena API 返回空响应。这可能是由于: 无效的认证令牌、cf_clearance 过期、模型不可用或 API 速率限制。"
+                        debug_print(f"❌ {error_detail}")
+                        # Return OpenAI-compatible error response
+                        return {
+                            "error": {
+                                "message": error_detail,
+                                "type": "upstream_error",
+                                "code": "empty_response"
+                            }
+                        }
                 else:
-                    error_detail = f"LMArena API error: {e.response.status_code}"
+                    debug_print(f"✅ 响应文本预览: {response_text[:200]}...")
+                
+                # Update session - Store message history with IDs (including reasoning and citations if present)
+                assistant_message = {
+                    "id": model_msg_id, 
+                    "role": "assistant", 
+                    "content": response_text.strip()
+                }
+                if reasoning_text:
+                    assistant_message["reasoning_content"] = reasoning_text.strip()
+                if citations:
+                    # Deduplicate citations by URL
+                    unique_citations = []
+                    seen_urls = set()
+                    for citation in citations:
+                        citation_url = citation.get('url')
+                        if citation_url and citation_url not in seen_urls:
+                            seen_urls.add(citation_url)
+                            unique_citations.append(citation)
+                    assistant_message["citations"] = unique_citations
+                
+                if not session:
+                    chat_sessions[api_key_str][conversation_id] = {
+                        "conversation_id": session_id,
+                        "model": model_public_name,
+                        "messages": [
+                            {"id": user_msg_id, "role": "user", "content": prompt},
+                            assistant_message
+                        ]
+                    }
+                    debug_print(f"💾 已保存对话 {conversation_id} 的新会话")
+                else:
+                    # Append new messages to history
+                    chat_sessions[api_key_str][conversation_id]["messages"].append(
+                        {"id": user_msg_id, "role": "user", "content": prompt}
+                    )
+                    chat_sessions[api_key_str][conversation_id]["messages"].append(
+                        assistant_message
+                    )
+                    debug_print(f"💾 已更新对话 {conversation_id} 的现有会话")
+
+                # Build message object with reasoning and citations if present
+                message_obj = {
+                    "role": "assistant",
+                    "content": response_text.strip(),
+                }
+                if reasoning_text:
+                    message_obj["reasoning_content"] = reasoning_text.strip()
+                if citations:
+                    # Deduplicate citations by URL
+                    unique_citations = []
+                    seen_urls = set()
+                    for citation in citations:
+                        citation_url = citation.get('url')
+                        if citation_url and citation_url not in seen_urls:
+                            seen_urls.add(citation_url)
+                            unique_citations.append(citation)
+                    message_obj["citations"] = unique_citations
+                
+                # Calculate token counts (including reasoning tokens)
+                prompt_tokens = len(prompt)
+                completion_tokens = len(response_text)
+                reasoning_tokens = len(reasoning_text)
+                total_tokens = prompt_tokens + completion_tokens + reasoning_tokens
+                
+                # Build usage object with reasoning tokens if present
+                usage_obj = {
+                    "prompt_tokens": prompt_tokens,
+                    "completion_tokens": completion_tokens,
+                    "total_tokens": total_tokens
+                }
+                if reasoning_tokens > 0:
+                    usage_obj["reasoning_tokens"] = reasoning_tokens
+                
+                final_response = {
+                    "id": f"chatcmpl-{uuid.uuid4()}",
+                    "object": "chat.completion",
+                    "created": int(time.time()),
+                    "model": model_public_name,
+                    "conversation_id": conversation_id,
+                    "choices": [{
+                        "index": 0,
+                        "message": message_obj,
+                        "finish_reason": "stop"
+                    }],
+                    "usage": usage_obj
+                }
+                
+                debug_print(f"\n✅ 请求成功完成")
+                debug_print("="*80 + "\n")
+                
+                return final_response
+
+            except httpx.HTTPStatusError as e:
+                # Provide user-friendly error messages
+                if e.response.status_code == 429:
+                    error_detail = "LMArena 超出速率限制。请稍后再试。"
+                    error_type = "rate_limit_error"
+                elif e.response.status_code == 401:
+                    error_detail = "未授权: 您的 LMArena 认证令牌已过期或无效。请从仪表板获取新的认证令牌。"
+                    error_type = "authentication_error"
+                else:
+                    error_detail = f"LMArena API 错误: {e.response.status_code}"
                     try:
                         error_body = e.response.json()
                         error_detail += f" - {error_body}"
                     except:
                         error_detail += f" - {e.response.text[:200]}"
-                error_type = "upstream_error"
+                    error_type = "upstream_error"
+                
+                print(f"\n❌ HTTP 状态错误")
+                print(f"📛 错误详情: {error_detail}")
+                print(f"📤 请求 URL: {url}")
+                debug_print(f"📤 请求有效负载 (已截断): {json.dumps(payload, indent=2)[:500]}")
+                debug_print(f"📥 响应文本: {e.response.text[:500]}")
+                print("="*80 + "\n")
+                
+                # Return OpenAI-compatible error response
+                return {
+                    "error": {
+                        "message": error_detail,
+                        "type": error_type,
+                        "code": f"http_{e.response.status_code}"
+                    }
+                }
             
-            print(f"\n❌ HTTP STATUS ERROR")
-            print(f"📛 Error detail: {error_detail}")
-            print(f"📤 Request URL: {url}")
-            debug_print(f"📤 Request payload (truncated): {json.dumps(payload, indent=2)[:500]}")
-            debug_print(f"📥 Response text: {e.response.text[:500]}")
-            print("="*80 + "\n")
+            except httpx.TimeoutException as e:
+                print(f"\n⏱️  超时错误")
+                print(f"📛 请求在 120 秒后超时")
+                print(f"📤 请求 URL: {url}")
+                print("="*80 + "\n")
+                # Return OpenAI-compatible error response
+                return {
+                    "error": {
+                        "message": "LMArena API 请求在 120 秒后超时",
+                        "type": "timeout_error",
+                        "code": "request_timeout"
+                    }
+                }
             
-            # Return OpenAI-compatible error response
-            return {
-                "error": {
-                    "message": error_detail,
-                    "type": error_type,
-                    "code": f"http_{e.response.status_code}"
+            except Exception as e:
+                print(f"\n❌ HTTP 客户端发生意外错误")
+                print(f"📛 错误类型: {type(e).__name__}")
+                print(f"📛 错误消息: {str(e)}")
+                print(f"📤 请求 URL: {url}")
+                print("="*80 + "\n")
+                # Return OpenAI-compatible error response
+                return {
+                    "error": {
+                        "message": f"意外错误: {str(e)}",
+                        "type": "internal_error",
+                        "code": type(e).__name__.lower()
+                    }
                 }
-            }
-        
-        except httpx.TimeoutException as e:
-            print(f"\n⏱️  TIMEOUT ERROR")
-            print(f"📛 Request timed out after 120 seconds")
-            print(f"📤 Request URL: {url}")
-            print("="*80 + "\n")
-            # Return OpenAI-compatible error response
-            return {
-                "error": {
-                    "message": "Request to LMArena API timed out after 120 seconds",
-                    "type": "timeout_error",
-                    "code": "request_timeout"
-                }
-            }
-        
-        except Exception as e:
-            print(f"\n❌ UNEXPECTED ERROR IN HTTP CLIENT")
-            print(f"📛 Error type: {type(e).__name__}")
-            print(f"📛 Error message: {str(e)}")
-            print(f"📤 Request URL: {url}")
-            print("="*80 + "\n")
-            # Return OpenAI-compatible error response
-            return {
-                "error": {
-                    "message": f"Unexpected error: {str(e)}",
-                    "type": "internal_error",
-                    "code": type(e).__name__.lower()
-                }
-            }
                 
     except HTTPException:
         raise
     except Exception as e:
-        print(f"\n❌ TOP-LEVEL EXCEPTION")
-        print(f"📛 Error type: {type(e).__name__}")
-        print(f"📛 Error message: {str(e)}")
+        print(f"\n❌ 顶级异常")
+        print(f"📛 错误类型: {type(e).__name__}")
+        print(f"📛 错误消息: {str(e)}")
         print("="*80 + "\n")
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"内部服务器错误: {str(e)}")
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("🚀 LMArena Bridge Server Starting...")
+    print("🚀 LMArena Bridge 服务器正在启动...")
     print("=" * 60)
-    print(f"📍 Dashboard: http://localhost:{PORT}/dashboard")
-    print(f"🔐 Login: http://localhost:{PORT}/login")
-    print(f"📚 API Base URL: http://localhost:{PORT}/api/v1")
+    print(f"📍 仪表板: http://localhost:{PORT}/dashboard")
+    print(f"🔐 登录: http://localhost:{PORT}/login")
+    print(f"📚 API 基础 URL: http://localhost:{PORT}/api/v1")
     print("=" * 60)
     uvicorn.run(app, host="0.0.0.0", port=PORT)
